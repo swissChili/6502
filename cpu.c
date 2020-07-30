@@ -32,9 +32,11 @@ void free_cpu(cpu_t *cpu)
 	free(cpu->mem);
 }
 
-void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, uint16_t addr)
+void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t addr)
 {
-
+	switch (op) {
+		
+	}
 }
 
 uint16_t le_to_native(uint8_t a, uint8_t b)
@@ -53,28 +55,46 @@ uint16_t fetch_le(cpu_t *cpu)
 	return le_to_native(a, b);
 }
 
-uint16_t fetch_addr(cpu_t *cpu, uint8_t am)
+arg_t arg_imm(uint16_t a)
+{
+	return (arg_t){ a, a };
+}
+
+arg_t arg_ptr(cpu_t *c, uint flags, uint16_t p)
+{
+	if (flags & FETCH_NO_INDIRECTION)
+		return arg_imm(p);
+
+	return (arg_t){ c->mem[p], p };
+}
+
+arg_t arg(uint16_t v, uint16_t a)
+{
+	return (arg_t){ v, a };
+}
+
+arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 {
 	switch (am)
 	{
 		case AM_ACC:
 		case AM_IMP:
-			return 0;
+			return arg_imm(0);
 
 		// In both cases return immediate 8 bit value
 		case AM_IMM:
 		case AM_ZP:
-			return cpu->mem[cpu->pc++];
+			return arg_imm(cpu->mem[cpu->pc++]);
 
 		case AM_ABS:
-			return fetch_le(cpu); 
+			return arg_ptr(cpu, f, fetch_le(cpu));
 
 		case AM_REL:
 		{
 			// PC should point to the opcode
 			// braces needed to avoid c stupidity
 			uint16_t pc = cpu->pc - 1;
-			return cpu->mem[cpu->pc++] + pc;
+			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + pc);
 		}
 
 		case AM_IND:
@@ -83,37 +103,39 @@ uint16_t fetch_addr(cpu_t *cpu, uint8_t am)
 			uint8_t low = cpu->mem[addr],
 				high = cpu->mem[addr + 1];
 
-			return le_to_native(low, high);
+			return arg_ptr(cpu, f, le_to_native(low, high));
 		}
 
 		case AM_AX:
-			return fetch_le(cpu) + cpu->regs[X];
+			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[X]);
 
 		case AM_AY:
-			return fetch_le(cpu) + cpu->regs[Y];
+			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[Y]);
 
 		case AM_ZPX:
-			return cpu->mem[cpu->pc++] + cpu->regs[X];
+			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[X]);
 
 		case AM_ZPY:
-			return cpu->mem[cpu->pc++] + cpu->regs[Y];
+			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[Y]);
 
 		case AM_ZIX:
 		{
 			uint8_t zp = cpu->mem[cpu->pc++];
-			return le_to_native(cpu->mem[zp + cpu->regs[X]], cpu->mem[zp + cpu->regs[X] + 1]);
+			uint16_t addr = zp + cpu->regs[X];
+			uint16_t indirect = le_to_native(cpu->mem[addr], cpu->mem[addr + 1]);
+			return arg_ptr(cpu, f, indirect);
 		}
 
 		case AM_ZIY:
 		{
 			uint8_t zp = cpu->mem[cpu->pc++];
 			uint16_t base = le_to_native(cpu->mem[zp], cpu->mem[zp + 1]);
-			return base + cpu->regs[Y];
+			return arg_ptr(cpu, f, base + cpu->regs[Y]);
 		}
 
 		default:
 			die("Unknown address mode %x", am);
-			return -1; // unreachable
+			__builtin_unreachable();
 	}
 }
 
@@ -123,7 +145,7 @@ void step(cpu_t *cpu)
 	{
 #define INST(mn, am, op) \
 		case op: \
-			execute(cpu, #mn, mn, fetch_addr(cpu, am)); \
+			execute(cpu, #mn, mn, fetch_addr(cpu, am, 0)); \
 			break;
 
 		INSTRUCTIONS
@@ -183,7 +205,8 @@ void disas_step(cpu_t *cpu)
 	{
 #define INST(mn, am, op) \
 		case op: \
-			dump_inst(cpu, #mn, fetch_addr(cpu, am), am); \
+			dump_inst(cpu, #mn, \
+				fetch_addr(cpu, am, FETCH_NO_INDIRECTION).ptr, am); \
 			break;
 
 		INSTRUCTIONS

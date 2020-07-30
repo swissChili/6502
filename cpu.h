@@ -96,6 +96,11 @@ enum // Opcodes
 	NOP,
 };
 
+enum // Fetch flags
+{
+	FETCH_NO_INDIRECTION = 1, // Do not follow indirection (used for disassembly)
+};
+
 // Emulator instance, create with new_cpu()
 typedef struct
 {
