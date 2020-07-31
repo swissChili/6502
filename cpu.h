@@ -1,10 +1,13 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#define REGISTERS R(A) R(X) R(Y) R(SP)
 
 enum // Registers
 {
-	A, X, Y, SR, SP
+	A, X, Y, SP
 };
 
 enum // Flags
@@ -101,12 +104,27 @@ enum // Fetch flags
 	FETCH_NO_INDIRECTION = 1, // Do not follow indirection (used for disassembly)
 };
 
+// Status register
+typedef struct __attribute__((packed))
+{
+	bool negative	: 1;
+	bool overflow	: 1;
+	bool unused		: 1;
+	bool break_		: 1;
+	bool decimal	: 1;
+	bool no_int		: 1;
+	bool zero		: 1;
+	bool carry		: 1;
+} status_t;
+
 // Emulator instance, create with new_cpu()
 typedef struct
 {
-	uint8_t regs[5]; // A, X, Y, SP and SR registers
+	uint8_t regs[4]; // A, X, Y, SP registers
 	uint16_t pc;
+	status_t status;
 	uint8_t *mem;
+	bool running;
 } cpu_t;
 
 // Argument type, includes both pointer and its value
@@ -117,6 +135,7 @@ typedef struct
 } arg_t;
 
 cpu_t new_cpu();
+void step(cpu_t *cpu);
 void free_cpu(cpu_t *cpu);
 void die(const char *message);
 void disas(cpu_t *cpu);

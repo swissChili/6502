@@ -12,4 +12,4 @@ if (${GEN_INSTRUCTIONS_HEADER})
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
-add_executable(emu-6502 main.c cpu.c cpu.h instructions.h)
+add_executable(emu-6502 main.c cpu.c cpu.h dbg.c dbg.h instructions.h)
