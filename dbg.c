@@ -11,10 +11,13 @@ void debug(cpu_t *cpu)
 	while (true)
 	{
 		char *input = readline("\033[33m> \033[0m");
-		if (!input)
+		if (!input || !*input)
 			continue;
 
 		char *tok = strtok(input, " \t\r\n\v");
+
+		if (!tok || !*tok)
+			continue;
 		
 		if (!strcmp(tok, "step") || !strcmp(tok, "s"))
 		{
@@ -29,22 +32,34 @@ void debug(cpu_t *cpu)
 				{
 					uint16_t addr = strtol(tok + 1, &ok, 16);
 
-					if (ok == 0)
-					{
-						printf("Memory:\n");
-						printf("\t$%x	%x\n", addr, cpu->mem[addr]);
+					printf("Memory:\n");
+					printf("\t$%x	%x\n", addr, cpu->mem[addr]);
+					if (addr < 0xFFFF)
 						printf("\t$%x	%x\n", addr + 1, cpu->mem[addr + 1]);
-					}
 				}
 				else
 				{
-					printf("Registers:\n");
-
-					#define R(r) printf("\t" #r ":	%x\n", cpu->regs[r]);
-						REGISTERS
-					#undef R
+					printf("Expected an address as an argument in the form "
+						"$1234, not %s\n", tok);
 				}
 			}
+			else
+			{
+				printf("Registers:\n");
+
+				#define R(r) printf("\t" #r ":\t%x\n", cpu->regs[r]);
+					REGISTERS
+				#undef R
+			}
+		}
+		else if (!strcmp(tok, "quit") || !strcmp(tok, "exit"))
+		{
+			printf("Bye\n");
+			return;
+		}
+		else
+		{
+			printf("Unknown command %s\n", tok);
 		}
 
 		add_history(input);

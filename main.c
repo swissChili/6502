@@ -1,5 +1,7 @@
 #include "cpu.h"
+#include "dbg.h"
 
+#include <bits/getopt_core.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,44 +9,71 @@
 
 int main(int argc, char **argv)
 {
-	printf("6502 Emulator\n");
-
-	uint8_t disflag = 0,
+	bool disflag = 0,
 		runflag = 0,
-		helpflag = 0;
+		helpflag = 0,
+		debugflag = 0,
+		should_read = 0;
+
+	FILE *input = stdin;
 
 	char c;
 
-	while ((c = getopt(argc, argv, "drh")) != -1)
+	while ((c = getopt(argc, argv, "Ddrhi:")) != -1)
 	{
 		switch (c)
 		{
-			case 'd':
-				disflag = 1;
-				break;
-			case 'r':
-				runflag = 1;
-				break;
-			case 'h':
-			case '?':
-				helpflag = 1;
-				break;
+		case 'd':
+			disflag = true;
+			should_read = true;
+			break;
+		case 'r':
+			runflag = true;
+			should_read = true;
+			break;
+		case 'D':
+			debugflag = true;
+			should_read = true;
+			break;
+		case 'i':
+			input = fopen(optarg, "r");
+			break;
+		case 'h':
+		case '?':
+			helpflag = 1;
+			break;
 		}
 	}
 
 	if (helpflag)
 	{
-		printf("-r to run, -d to disassemble");
+		printf("6502 emulator, disassembler and debugger\n"
+			"Usage:\n"
+			"	-d disassemble input\n"
+			"	-r run input\n"
+			"	-D debug input (open debug prompt)\n"
+			"	-i <input> set input file, defaults to standard input\n"
+			"	-h, -? show this help page\n");
 		return 0;
 	}
 
-	cpu_t cpu = new_cpu();
-	fread(cpu.mem, 0xFFFF, 1, stdin);
+	cpu_t cpu;
+
+	if (should_read)
+	{
+		cpu = new_cpu();
+		fread(cpu.mem, 0xFFFF, 1, input);
+	}
 
 	if (disflag)
 	{
 		disas(&cpu);
 	}
-
-	free_cpu(&cpu);
+	else if (debugflag)
+	{
+		debug(&cpu);
+	}
+	
+	if (should_read)
+		free_cpu(&cpu);
 }
