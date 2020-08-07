@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "dbg.h"
+#include "gui.h"
 
 #include <bits/getopt_core.h>
 #include <ctype.h>
@@ -13,7 +14,8 @@ int main(int argc, char **argv)
 		runflag = false,
 		helpflag = false,
 		debugflag = false,
-		should_read = false;
+		should_read = false,
+		guiflag = false;
 
 	int disasm_len = 0;
 
@@ -21,7 +23,7 @@ int main(int argc, char **argv)
 
 	char c;
 
-	while ((c = getopt(argc, argv, "Ddrhi:n:")) != -1)
+	while ((c = getopt(argc, argv, "Ddrhgi:n:")) != -1)
 	{
 		switch (c)
 		{
@@ -35,6 +37,10 @@ int main(int argc, char **argv)
 			break;
 		case 'D':
 			debugflag = true;
+			should_read = true;
+			break;
+		case 'g':
+			guiflag = true;
 			should_read = true;
 			break;
 		case 'i':
@@ -76,7 +82,11 @@ int main(int argc, char **argv)
 		printf("%s -h  for help\n", argv[0]);
 	}
 
-	if (disflag)
+	if (guiflag)
+	{
+		gui(&cpu);
+	}
+	else if (disflag)
 	{
 		disas(&cpu);
 	}

@@ -13,6 +13,13 @@
 #define warn(m, ...) \
 	printf("\033[33m" m "\033[0m\n", ##__VA_ARGS__);
 
+void reset(cpu_t *cpu)
+{
+	cpu->regs[SP] = 0xFD; // stack at is 0x100 + SP
+	cpu->pc = 0; // arbitrary program counter start
+	cpu->running = true;
+}
+
 cpu_t new_cpu()
 {
 	cpu_t cpu = { 0 };
