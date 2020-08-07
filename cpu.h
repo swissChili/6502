@@ -138,4 +138,8 @@ cpu_t new_cpu();
 void step(cpu_t *cpu);
 void free_cpu(cpu_t *cpu);
 void die(const char *message);
+// IMPORTANT: all disassembly functions mess with the PC
 void disas(cpu_t *cpu);
+void disas_num(cpu_t *cpu, uint16_t num);
+void disas_step(cpu_t *cpu);
+void run(cpu_t *cpu);

@@ -9,17 +9,19 @@
 
 int main(int argc, char **argv)
 {
-	bool disflag = 0,
-		runflag = 0,
-		helpflag = 0,
-		debugflag = 0,
-		should_read = 0;
+	bool disflag = false,
+		runflag = false,
+		helpflag = false,
+		debugflag = false,
+		should_read = false;
+
+	int disasm_len = 0;
 
 	FILE *input = stdin;
 
 	char c;
 
-	while ((c = getopt(argc, argv, "Ddrhi:")) != -1)
+	while ((c = getopt(argc, argv, "Ddrhi:n:")) != -1)
 	{
 		switch (c)
 		{
@@ -38,6 +40,9 @@ int main(int argc, char **argv)
 		case 'i':
 			input = fopen(optarg, "r");
 			break;
+		case 'n':
+			disasm_len = atoi(optarg);
+			break;
 		case 'h':
 		case '?':
 			helpflag = 1;
@@ -53,6 +58,7 @@ int main(int argc, char **argv)
 			"	-r run input\n"
 			"	-D debug input (open debug prompt)\n"
 			"	-i <input> set input file, defaults to standard input\n"
+			"	-n <number> number of instructions to disassemble, 0 for all\n"
 			"	-h, -? show this help page\n");
 		return 0;
 	}
@@ -64,10 +70,19 @@ int main(int argc, char **argv)
 		cpu = new_cpu();
 		fread(cpu.mem, 0xFFFF, 1, input);
 	}
+	else
+	{
+		puts("6502 toolchain by swissChili <swisschili.sh>");
+		printf("%s -h  for help\n", argv[0]);
+	}
 
 	if (disflag)
 	{
 		disas(&cpu);
+	}
+	else if (runflag)
+	{
+		run(&cpu);
 	}
 	else if (debugflag)
 	{
