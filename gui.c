@@ -30,7 +30,23 @@ void gui(cpu_t *cpu)
 	bool cpu_running = false;
 
 	struct nk_context *ctx;
-	struct nk_colorf bg;
+	struct nk_colorf bg =
+	{
+		.r = 0.29f,
+		.g = 0.28f,
+		.b = 0.50f,
+		.a = 1.0f,
+	};
+	struct nk_color selected =
+	{
+		.r = 28,
+		.g = 234,
+		.b = 79,
+		.a = 255,
+	};
+
+	uint16_t disas_start = 0,
+		disas_end = 32;
 
 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_EVENTS);
@@ -62,8 +78,6 @@ void gui(cpu_t *cpu)
 	//nk_style_load_all_cursors(ctx, atlas->cursors);
 	nk_style_set_font(ctx, &font->handle);
 
-	bg.r = 0.29f, bg.g = 0.28f, bg.b = 0.50f, bg.a = 1.0f;
-
 	while (running)
 	{
 		SDL_Event evt;
@@ -86,18 +100,49 @@ void gui(cpu_t *cpu)
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{
 			nk_layout_row_dynamic(ctx, 30, 4);
-			char regpc[12],
-				rega[12],
-				regx[12],
-				regy[12];
-			sprintf(regpc, "PC: $%x", cpu->pc);
-			sprintf(rega, "A: $%x", cpu->regs[A]);
-			sprintf(regx, "X: $%x", cpu->regs[X]);
-			sprintf(regy, "Y: $%x", cpu->regs[Y]);
 			cpu->pc = nk_propertyi(ctx, "PC", 0, cpu->pc, 0xFFFF, 1, 20.0f);
 			cpu->regs[A] = nk_propertyi(ctx, "A", 0, cpu->regs[A], 0xFF, 1, 20.0f);
 			cpu->regs[X] = nk_propertyi(ctx, "X", 0, cpu->regs[X], 0xFF, 1, 20.0f);
 			cpu->regs[Y] = nk_propertyi(ctx, "Y", 0, cpu->regs[Y], 0xFF, 1, 20.0f);
+		}
+		nk_end(ctx);
+
+		if (nk_begin(ctx, "Disassembler", nk_rect(330, 50, 250, 200),
+			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+		{
+			nk_layout_row_dynamic(ctx, 30, 2);
+			disas_start = nk_propertyi(ctx, "Start", 0, disas_start, 0xFFFF, 1, 20.0f);
+			disas_end = nk_propertyi(ctx, "End", 0, disas_end, 0xFFFF, 1, 20.0f);
+
+			uint16_t pc = cpu->pc;
+
+			for (cpu->pc = disas_start; cpu->pc < disas_end;)
+			{
+				nk_layout_row_begin(ctx, NK_STATIC, 24, 2);
+
+				uint16_t this_pc = cpu->pc;
+			
+				char addr[6];
+				sprintf(addr, "$%x", this_pc);
+
+				nk_layout_row_push(ctx, 48);
+				nk_label(ctx, addr, NK_TEXT_LEFT);
+
+				nk_layout_row_push(ctx, 120);
+				char *line = disas_step(cpu);
+				if (pc == this_pc)
+				{
+					nk_label_colored(ctx, line, NK_TEXT_LEFT, selected);
+				}
+				else
+				{
+					nk_label(ctx, line, NK_TEXT_LEFT);
+				}
+				free(line);
+			}
+
+			cpu->pc = pc;
 		}
 		nk_end(ctx);
 

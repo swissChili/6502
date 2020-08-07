@@ -528,55 +528,59 @@ void step(cpu_t *cpu)
 	}
 }
 
-void dump_inst(cpu_t *cpu, const char *mn, uint16_t addr, uint8_t am)
+int dump_inst(cpu_t *cpu, char *buf, const char *mn, uint16_t addr, uint8_t am)
 {
-	printf("\t%s\t", mn);
+	char *end = buf;
+	end += sprintf(end, "%s ", mn);
 
 	switch (am)
 	{
 		case AM_IMM:
-			printf("#");
+			end += sprintf(end, "#");
 		case AM_REL:
 		case AM_ABS:
 		case AM_ZP:
-			printf("$%x", addr);
+			end += sprintf(end, "$%x", addr);
 			break;
 
 		case AM_IND:
-			printf("($%x)", addr);
+			end += sprintf(end, "($%x)", addr);
 			break;
 
 		case AM_AX:
 		case AM_ZPX:
-			printf("$%x, X", addr);
+			end += sprintf(end, "$%x, X", addr);
 			break;
 
 		case AM_AY:
 		case AM_ZPY:
-			printf("$%x, Y", addr);
+			end += sprintf(end, "$%x, Y", addr);
 			break;
 
 		case AM_ZIX:
-			printf("($%x, X)", addr);
+			end += sprintf(end, "($%x, X)", addr);
 			break;
 
 		case AM_ZIY:
-			printf("($%x), Y", addr);
+			end += sprintf(end, "($%x), Y", addr);
 			break;
 	}
 
-	printf("\n");
+	return end - buf;
 }
 
-void disas_step(cpu_t *cpu)
+char *disas_step(cpu_t *cpu)
 {
-	printf("$%x", cpu->pc);
+	char *buffer = malloc(80);
+	char *end = buffer;
+
+	// end += sprintf(buffer, "$%x", cpu->pc);
 	uint8_t op = cpu->mem[cpu->pc++];
 	switch (op)
 	{
 #define INST(mn, am, op) \
 		case op: \
-			dump_inst(cpu, #mn, \
+			end += dump_inst(cpu, end, #mn, \
 				fetch_addr(cpu, am, FETCH_NO_INDIRECTION).ptr, am); \
 			break;
 
@@ -585,26 +589,41 @@ void disas_step(cpu_t *cpu)
 #undef INST
 
 		default:
-			warn("\tUndefined opcode %x", op);
+			end += sprintf(end, "Undefined opcode %x", op);
 	}
+
+	*end = 0;
+
+	return buffer;
 }
 
 void disas_num(cpu_t *cpu, uint16_t num)
 {
+	uint16_t pc = cpu->pc;
 	for (int i = 0; i < num; i++)
 	{
-		disas_step(cpu);
+		uint16_t last_pc = cpu->pc;
+		char *line = disas_step(cpu);
+		printf("$%x\t%s\n", last_pc, line);
+		free(line);
 	}
+	cpu->pc = pc;
 }
 
 void disas(cpu_t *cpu)
 {
+	uint16_t pc = cpu->pc;
 	// Raw binary, no way to know what's code what isn't
 	while (cpu->pc < 0xFFFF)
 	{
-		disas_step(cpu);
+		uint16_t last_pc = cpu->pc;
+		char *line = disas_step(cpu);
+		printf("$%x\t%s\n", last_pc, line);
+		free(line);
 	}
+	cpu->pc = pc;
 }
+
 void run(cpu_t *cpu)
 {
 	while (cpu->running)

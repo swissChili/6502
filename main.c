@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	}
 	else if (disflag)
 	{
-		disas(&cpu);
+		disas_num(&cpu, 12);
 	}
 	else if (runflag)
 	{
