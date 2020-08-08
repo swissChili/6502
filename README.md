@@ -1,9 +1,9 @@
 # 6502 Toolchain
 
 <center>
-	**Click for demonstration:**
+**Click for demonstration:**
 
-	[![Screenshot](screenshot.png)](colors.webm)
+[![Screenshot](screenshot.png)](colors.webm)
 </center>
 
 This project aims to create a portable toolchain for developing,
