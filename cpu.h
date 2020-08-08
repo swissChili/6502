@@ -4,6 +4,9 @@
 #include <stdbool.h>
 
 #define REGISTERS R(A) R(X) R(Y) R(SP)
+#define CPU_FB_ADDR 0x200
+#define CPU_FB_W 32
+#define CPU_FB_H 32
 
 enum // Registers
 {

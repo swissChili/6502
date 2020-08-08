@@ -16,7 +16,7 @@
 void reset(cpu_t *cpu)
 {
 	cpu->regs[SP] = 0xFD; // stack at is 0x100 + SP
-	cpu->pc = 0; // arbitrary program counter start
+	cpu->pc = 0x600; // arbitrary program counter start
 	cpu->running = true;
 }
 
@@ -24,7 +24,7 @@ cpu_t new_cpu()
 {
 	cpu_t cpu = { 0 };
 	cpu.regs[SP] = 0xFD; // stack at is 0x100 + SP
-	cpu.pc = 0; // arbitrary program counter start
+	cpu.pc = 0x600; // arbitrary program counter start
 	cpu.running = true;
 	cpu.mem = malloc(0xFFFF);
 	memset(cpu.mem, 0, 0xFFFF);

@@ -15,6 +15,7 @@
 #define NK_SDL_GL3_IMPLEMENTATION
 #include "nuklear/nuklear.h"
 #include "nuklear/demo/sdl_opengl3/nuklear_sdl_gl3.h"
+#include "screen.h"
 
 #define WINDOW_WIDTH 720
 #define WINDOW_HEIGHT 640
@@ -45,8 +46,10 @@ void gui(cpu_t *cpu)
 		.a = 255,
 	};
 
-	uint16_t disas_start = 0,
-		disas_end = 32;
+	uint16_t disas_start = 0x600,
+		disas_end = 0x600 + 32;
+
+	uint8_t screen_scale = 4;
 
 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_EVENTS);
@@ -95,7 +98,7 @@ void gui(cpu_t *cpu)
 		if (!cpu->running)
 			cpu_running = false;
 
-		if (nk_begin(ctx, "Registers", nk_rect(50, 300, 400, 90),
+		if (nk_begin(ctx, "Registers", nk_rect(50, 300, 500, 90),
 			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{
@@ -107,7 +110,19 @@ void gui(cpu_t *cpu)
 		}
 		nk_end(ctx);
 
-		if (nk_begin(ctx, "Disassembler", nk_rect(330, 50, 250, 200),
+		if (nk_begin(ctx, "Screen", nk_rect(50, 400, 150, 220),
+			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+		{
+			nk_layout_row_dynamic(ctx, 24, 1);
+			screen_scale = nk_propertyi(ctx, "Scale", 1, screen_scale, 8, 1, 1);
+			
+			nk_layout_row_static(ctx, screen_scale * 32, screen_scale * 32, 1);
+			screen(ctx, cpu->mem + CPU_FB_ADDR, screen_scale);
+		}
+		nk_end(ctx);
+
+		if (nk_begin(ctx, "Disassembler", nk_rect(330, 50, 300, 200),
 			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{

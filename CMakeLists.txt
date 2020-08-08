@@ -14,5 +14,5 @@ if (${GEN_INSTRUCTIONS_HEADER})
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
-add_executable(6502 main.c cpu.c cpu.h dbg.c dbg.h instructions.h gui.h gui.c)
+add_executable(6502 main.c cpu.c cpu.h dbg.c dbg.h instructions.h gui.h gui.c screen.h screen.c)
 target_link_libraries(6502 readline SDL2 GL GLU GLEW m)

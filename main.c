@@ -60,9 +60,10 @@ int main(int argc, char **argv)
 	{
 		printf("6502 emulator, disassembler and debugger\n"
 			"Usage:\n"
+			"	-g use GUI\n"
 			"	-d disassemble input\n"
 			"	-r run input\n"
-			"	-D debug input (open debug prompt)\n"
+			"	-D open CLI debug prompt (like gdb)\n"
 			"	-i <input> set input file, defaults to standard input\n"
 			"	-n <number> number of instructions to disassemble, 0 for all\n"
 			"	-h, -? show this help page\n");
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 	if (should_read)
 	{
 		cpu = new_cpu();
-		fread(cpu.mem, 0xFFFF, 1, input);
+		fread(cpu.mem + 0x600, 0xFFFF - 0x600, 1, input);
 	}
 	else
 	{
