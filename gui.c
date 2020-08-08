@@ -39,13 +39,9 @@ void gui(cpu_t *cpu)
 		.b = 0.50f,
 		.a = 1.0f,
 	};
-	struct nk_color selected =
-	{
-		.r = 28,
-		.g = 234,
-		.b = 79,
-		.a = 255,
-	};
+	struct nk_color
+		selected = nk_rgb(28, 234, 79),
+		red = nk_rgb(226, 56, 76);
 
 	uint16_t disas_start = 0x600,
 		disas_end = 0x600 + 32;
@@ -159,6 +155,30 @@ void gui(cpu_t *cpu)
 			}
 
 			cpu->pc = pc;
+		}
+		nk_end(ctx);
+
+		if (nk_begin(ctx, "Stack", nk_rect(250, 250, 230, 350),
+			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+		{
+			nk_layout_row_static(ctx, 24, 48, 2);
+			for (int i = 0xFD; i >= 0; i--)
+			{
+				char line[6];
+				sprintf(line, "$%x", 0x100 + i);
+				nk_label(ctx, line, NK_TEXT_LEFT);
+
+				sprintf(line, "$%x", cpu->mem[0x100 + i]);
+				if (i == cpu->regs[SP])
+				{
+					nk_label_colored(ctx, line, NK_TEXT_LEFT, selected);
+				}
+				else
+				{
+					nk_label(ctx, line, NK_TEXT_LEFT);
+				}
+			}
 		}
 		nk_end(ctx);
 

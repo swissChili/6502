@@ -25,6 +25,7 @@ void reset(cpu_t *cpu)
 	cpu->regs[SP] = 0xFD; // stack at is 0x100 + SP
 	cpu->pc = 0x600; // arbitrary program counter start
 	cpu->running = true;
+	memset(cpu->mem + 0x100, 0, 0xFE);
 }
 
 cpu_t new_cpu()
