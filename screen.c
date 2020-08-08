@@ -3,6 +3,10 @@
 
 #include <SDL2/SDL.h>
 
+#ifndef NO_PTHREAD
+#include <pthread.h>
+#endif
+
 struct nk_color byte_to_color(uint8_t b)
 {
 	struct nk_color c;
@@ -50,13 +54,27 @@ sdl_screen_t new_sdl_screen(uint8_t size)
 		0);
 	scr.size = size;
 	scr.r = SDL_CreateRenderer(scr.win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	scr.tex = SDL_CreateTexture(scr.r, SDL_PIXELFORMAT_RGB332, SDL_TEXTUREACCESS_STREAMING,
+		CPU_FB_W, CPU_FB_H);
 
 	return scr;
 }
 
-void sdl_screen(sdl_screen_t *scr, uint8_t *mem)
+void free_sdl_screen(sdl_screen_t *scr)
 {
-	SDL_RenderClear(scr->r);
+	//free(scr->fb);
+	SDL_DestroyTexture(scr->tex);
+	SDL_DestroyRenderer(scr->r);
+	SDL_DestroyWindow(scr->win);
+}
+
+bool sdl_screen(sdl_screen_t *scr, uint8_t *mem, bool dirty)
+{
+	static bool texture_set = false;
+	if (!texture_set)
+	{
+		SDL_UpdateTexture(scr->tex, NULL, mem, CPU_FB_W);
+	}
 
 	SDL_Event e;
 
@@ -65,28 +83,42 @@ void sdl_screen(sdl_screen_t *scr, uint8_t *mem)
 		switch (e.type)
 		{
 			case SDL_QUIT:
-				exit(0);
+				return true;
 		}
 	}
 
-	for (int i = 0; i < CPU_FB_H; i++)
+	if (dirty)
 	{
-		for (int j = 0; j < CPU_FB_W; j++)
-		{
-			SDL_Rect r =
-			{
-				i * scr->size,
-				j * scr->size,
-				scr->size,
-				scr->size,
-			};
-
-			struct nk_color c = byte_to_color(mem[i + CPU_FB_H * j]);
-
-			SDL_SetRenderDrawColor(scr->r, c.r, c.g, c.b, c.a);
-			SDL_RenderFillRect(scr->r, &r);
-		}
+		SDL_RenderClear(scr->r);
+		SDL_RenderCopy(scr->r, scr->tex, NULL, NULL);
+		SDL_RenderPresent(scr->r);	
 	}
 
-	SDL_RenderPresent(scr->r);	
+	return false;
 }
+
+
+#ifndef NO_PTHREAD
+
+void *screen_thread(uint8_t *mem)
+{
+	sdl_screen_t scr = new_sdl_screen(8);
+	while (true)
+	{
+		if (sdl_screen(&scr, mem, true))
+			break;
+	}
+	free_sdl_screen(&scr);
+
+	exit(0);
+
+	return NULL;
+}
+
+void start_screen_thread(uint8_t *mem)
+{
+	pthread_t thread;
+	pthread_create(&thread, NULL, (void *(*)(void *))&screen_thread, mem);
+}
+
+#endif

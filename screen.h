@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef SCREEN_ONLY_SDL
 
@@ -25,9 +26,16 @@ typedef struct
 {
 	SDL_Window *win;
 	SDL_Renderer *r;
+	SDL_Texture *tex;
 	uint8_t size;
 } sdl_screen_t;
 
 // draw the CPU screen
 sdl_screen_t new_sdl_screen(uint8_t size);
-void sdl_screen(sdl_screen_t *scr, uint8_t *mem);
+void free_sdl_screen(sdl_screen_t *scr);
+bool sdl_screen(sdl_screen_t *scr, uint8_t *mem, bool dirty);
+
+#ifndef NO_PTHREAD
+void *screen_thread(uint8_t *mem);
+void start_screen_thread(uint8_t *mem);
+#endif

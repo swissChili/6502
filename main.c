@@ -92,8 +92,12 @@ int main(int argc, char **argv)
 
 	if (scrflag)
 	{
+#ifndef NO_PTHREAD
+		start_screen_thread(cpu.mem + CPU_FB_ADDR);
+#else
 		sdl_screen_t scr = new_sdl_screen(8);
 		g_scr = &scr;
+#endif
 	}
 
 	if (guiflag)
@@ -113,6 +117,9 @@ int main(int argc, char **argv)
 		debug(&cpu);
 	}
 	
+	if (scrflag)
+		free_sdl_screen(g_scr);
+
 	if (should_read)
 		free_cpu(&cpu);
 }

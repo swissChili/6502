@@ -128,6 +128,7 @@ typedef struct
 	status_t status;
 	uint8_t *mem;
 	bool running;
+	bool screen_dirty;
 } cpu_t;
 
 // Argument type, includes both pointer and its value

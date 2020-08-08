@@ -1,8 +1,6 @@
 # 6502 Toolchain
 
 <center>
-**Click for demonstration:**
-
 [![Screenshot](screenshot.png)](colors.webm)
 </center>
 
