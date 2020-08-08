@@ -36,6 +36,12 @@ void free_sdl_screen(sdl_screen_t *scr);
 bool sdl_screen(sdl_screen_t *scr, uint8_t *mem, bool dirty);
 
 #ifndef NO_PTHREAD
+
+#include <pthread.h>
+
+extern bool g_screen_thread_halt;
+
 void *screen_thread(uint8_t *mem);
-void start_screen_thread(uint8_t *mem);
+pthread_t start_screen_thread(uint8_t *mem);
+
 #endif

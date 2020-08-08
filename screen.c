@@ -1,5 +1,6 @@
 #include "screen.h"
 #include "cpu.h"
+#include "common.h"
 
 #include <SDL2/SDL.h>
 
@@ -52,10 +53,13 @@ sdl_screen_t new_sdl_screen(uint8_t size)
 		size * 32,
 		size * 32,
 		0);
+	ASSERT("Create Screen SDL_Window", scr.win);
 	scr.size = size;
 	scr.r = SDL_CreateRenderer(scr.win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	ASSERT("Create SDL_Renderer", scr.r);
 	scr.tex = SDL_CreateTexture(scr.r, SDL_PIXELFORMAT_RGB332, SDL_TEXTUREACCESS_STREAMING,
 		CPU_FB_W, CPU_FB_H);
+	ASSERT("Create SDL_Texture", scr.tex);
 
 	return scr;
 }
@@ -100,12 +104,15 @@ bool sdl_screen(sdl_screen_t *scr, uint8_t *mem, bool dirty)
 
 #ifndef NO_PTHREAD
 
+bool g_screen_thread_halt = false;
+
+
 void *screen_thread(uint8_t *mem)
 {
 	sdl_screen_t scr = new_sdl_screen(8);
 	while (true)
 	{
-		if (sdl_screen(&scr, mem, true))
+		if (sdl_screen(&scr, mem, true) || g_screen_thread_halt)
 			break;
 	}
 	free_sdl_screen(&scr);
@@ -115,10 +122,11 @@ void *screen_thread(uint8_t *mem)
 	return NULL;
 }
 
-void start_screen_thread(uint8_t *mem)
+pthread_t start_screen_thread(uint8_t *mem)
 {
 	pthread_t thread;
 	pthread_create(&thread, NULL, (void *(*)(void *))&screen_thread, mem);
+	return thread;
 }
 
 #endif

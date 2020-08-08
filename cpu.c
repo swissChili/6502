@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "common.h"
 #include "instructions.h"
 #define SCREEN_ONLY_SDL
 #include "screen.h"
@@ -36,10 +37,7 @@ cpu_t new_cpu()
 	cpu.screen_dirty = true;
 	memset(cpu.mem, 0, 0xFFFF);
 
-	if (!cpu.mem)
-	{
-		die("Could not allocate memory for CPU");
-	}
+	ASSERT("Allocate memory for CPU", cpu.mem);
 
 	return cpu;
 }
@@ -415,7 +413,8 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			break;
 
 		default:
-			die("Unsupported opcode: %x\n", op);
+			warn("Unsupported opcode: %x\n", op);
+			THROW("Unsupported opcode");
 	}
 	#undef REGS
 }
@@ -498,23 +497,23 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 
 		case AM_ZPX:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, cpu->mem[scr_dirty(cpu, cpu->pc++)]);
-			return arg_ptr(cpu, f, cpu->mem[scr_dirty(cpu, cpu->pc++)] + cpu->regs[X]);
+				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
+			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[X]);
 
 		case AM_ZPY:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, cpu->mem[scr_dirty(cpu, cpu->pc++)]);
-			return arg_ptr(cpu, f, cpu->mem[scr_dirty(cpu, cpu->pc++)] + cpu->regs[Y]);
+				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
+			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[Y]);
 
 		case AM_ZIX:
 		{
-			uint8_t zp = cpu->mem[scr_dirty(cpu, cpu->pc++)];
+			uint8_t zp = cpu->mem[cpu->pc++];
 
 			if (f & FETCH_NO_INDIRECTION)
 				return arg_imm(zp);
 
 			uint16_t addr = zp + cpu->regs[X];
-			uint16_t indirect = le_to_native(cpu->mem[scr_dirty(cpu, addr)], cpu->mem[scr_dirty(cpu, addr + 1)]);
+			uint16_t indirect = le_to_native(cpu->mem[addr], cpu->mem[addr + 1]);
 			return arg_ptr(cpu, f, indirect);
 		}
 
@@ -525,12 +524,13 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 			if (f & FETCH_NO_INDIRECTION)
 				return arg_imm(zp);
 
-			uint16_t base = le_to_native(cpu->mem[scr_dirty(cpu, zp)], cpu->mem[scr_dirty(cpu, zp + 1)]);
+			uint16_t base = le_to_native(cpu->mem[zp], cpu->mem[scr_dirty(cpu, zp + 1)]);
 			return arg_ptr(cpu, f, base + cpu->regs[Y]);
 		}
 
 		default:
-			die("Unknown address mode %x", am);
+			warn("Unknown address mode %x", am);
+			THROW("Unknowng address mode");
 			__builtin_unreachable();
 	}
 }
@@ -540,7 +540,9 @@ void step(cpu_t *cpu)
 	static int steps;
 	steps++;
 	cpu->screen_dirty = false;
-	switch (cpu->mem[scr_dirty(cpu, cpu->pc++)])
+	uint8_t pc = cpu->pc;
+	uint8_t op = cpu->mem[cpu->pc++];
+	switch (op)
 	{
 #define INST(mn, am, op) \
 		case op: \
@@ -552,7 +554,8 @@ void step(cpu_t *cpu)
 #undef INST
 
 		default:
-			die("Undefined opcode");
+			warn("Undefined opcode %x near %x [%x]", op, pc, cpu->mem[pc]);
+			THROW("Undefined opcode");
 	}
 
 	if (steps % 100 == 0)

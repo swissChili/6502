@@ -1,3 +1,4 @@
+#include "common.h"
 #include "cpu.h"
 #include "dbg.h"
 #include "gui.h"
@@ -11,6 +12,18 @@
 
 extern sdl_screen_t *g_scr;
 
+#ifndef NO_PTHREAD
+#include <pthread.h>
+
+
+void cleanup_screen_thread(pthread_t thread)
+{
+	g_screen_thread_halt = true;
+	puts("Cleaning up screen...");
+	pthread_join(thread, NULL);
+}
+#endif
+
 int main(int argc, char **argv)
 {
 	bool disflag = false,
@@ -19,7 +32,8 @@ int main(int argc, char **argv)
 		debugflag = false,
 		should_read = false,
 		guiflag = false,
-		scrflag = false;
+		scrflag = false,
+		nohaltflag = false;
 
 	int disasm_len = 0;
 
@@ -27,10 +41,13 @@ int main(int argc, char **argv)
 
 	char c;
 
-	while ((c = getopt(argc, argv, "Dsdrhgi:n:")) != -1)
+	while ((c = getopt(argc, argv, "HDsdrhgi:n:")) != -1)
 	{
 		switch (c)
 		{
+		case 'H':
+			nohaltflag = true;
+			break;
 		case 'd':
 			disflag = true;
 			should_read = true;
@@ -68,6 +85,8 @@ int main(int argc, char **argv)
 		printf("6502 emulator, disassembler and debugger\n"
 			"Usage:\n"
 			"	-g use GUI\n"
+			"	-s use SDL screen (faster than GUI debugger)\n"
+			"	-H keep running after CPU halts (useful on windows and to look at screen)\n"
 			"	-d disassemble input\n"
 			"	-r run input\n"
 			"	-D open CLI debug prompt (like gdb)\n"
@@ -93,11 +112,16 @@ int main(int argc, char **argv)
 	if (scrflag)
 	{
 #ifndef NO_PTHREAD
-		start_screen_thread(cpu.mem + CPU_FB_ADDR);
+		CATCH(&cleanup_screen_thread, start_screen_thread(cpu.mem + CPU_FB_ADDR));
 #else
 		sdl_screen_t scr = new_sdl_screen(8);
 		g_scr = &scr;
 #endif
+	}
+
+	if (guiflag && scrflag)
+	{
+		THROW("-g and -s cannot be used together");
 	}
 
 	if (guiflag)
@@ -111,14 +135,21 @@ int main(int argc, char **argv)
 	else if (runflag)
 	{
 		run(&cpu);
+		if (nohaltflag)
+		{
+			puts("Press any key to exit");
+			getchar();
+		}
 	}
 	else if (debugflag)
 	{
 		debug(&cpu);
 	}
 	
+#ifdef NO_PTHREAD
 	if (scrflag)
 		free_sdl_screen(g_scr);
+#endif
 
 	if (should_read)
 		free_cpu(&cpu);
