@@ -1,5 +1,7 @@
 #include "cpu.h"
 #include "instructions.h"
+#define SCREEN_ONLY_SDL
+#include "screen.h"
 
 #include <endian.h>
 #include <stdio.h>
@@ -12,6 +14,10 @@
 
 #define warn(m, ...) \
 	printf("\033[33m" m "\033[0m\n", ##__VA_ARGS__);
+
+
+sdl_screen_t *g_scr = NULL;
+
 
 void reset(cpu_t *cpu)
 {
@@ -89,36 +95,36 @@ void free_cpu(cpu_t *cpu)
 }
 
 // rotate right
-uint8_t ror(uint8_t a, uint8_t n)
+inline uint8_t ror(uint8_t a, uint8_t n)
 {
 	return (a >> n) | (a << (8 - n));
 }
 
 // rotate left
-uint8_t rol(uint8_t a, uint8_t n)
+inline uint8_t rol(uint8_t a, uint8_t n)
 {
 	return (a << n) | (a >> (8 - n));
 }
 
-void stat_nz(cpu_t *cpu, int8_t v)
+inline void stat_nz(cpu_t *cpu, int8_t v)
 {
 	cpu->status.negative = v < 0;
 	cpu->status.zero = v == 0;
 }
 
 // Used to check for overflow, is c unique?
-bool last_unique(bool a, bool b, bool c)
+inline bool last_unique(bool a, bool b, bool c)
 {
 	return a == b && a != c;
 }
 
-void stat_cv(cpu_t *cpu, uint8_t a, uint8_t b, uint8_t c)
+inline void stat_cv(cpu_t *cpu, uint8_t a, uint8_t b, uint8_t c)
 {
 	cpu->status.overflow = last_unique(a >> 7, b >> 7, c >> 7);
 	cpu->status.carry = c < a || c < b;
 }
 
-void cmp(cpu_t *cpu, uint8_t reg, uint8_t mem)
+inline void cmp(cpu_t *cpu, uint8_t reg, uint8_t mem)
 {
 	cpu->status.negative = 0;
 	cpu->status.zero = 0;
@@ -405,19 +411,19 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 	#undef REGS
 }
 
-uint16_t fetch_le(cpu_t *cpu)
+inline uint16_t fetch_le(cpu_t *cpu)
 {
 	uint8_t a = cpu->mem[cpu->pc++];
 	uint8_t b = cpu->mem[cpu->pc++];
 	return le_to_native(a, b);
 }
 
-arg_t arg_imm(uint16_t a)
+inline arg_t arg_imm(uint16_t a)
 {
 	return (arg_t){ a, a };
 }
 
-arg_t arg_ptr(cpu_t *c, uint flags, uint16_t p)
+inline arg_t arg_ptr(cpu_t *c, uint flags, uint16_t p)
 {
 	if (flags & FETCH_NO_INDIRECTION)
 		return arg_imm(p);
@@ -425,7 +431,7 @@ arg_t arg_ptr(cpu_t *c, uint flags, uint16_t p)
 	return (arg_t){ c->mem[p], p };
 }
 
-arg_t arg(uint16_t v, uint16_t a)
+inline arg_t arg(uint16_t v, uint16_t a)
 {
 	return (arg_t){ v, a };
 }
@@ -470,15 +476,25 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 		}
 
 		case AM_AX:
+			if (f & FETCH_NO_INDIRECTION)
+				return arg_ptr(cpu, f, fetch_le(cpu));
+
 			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[X]);
 
 		case AM_AY:
+			if (f & FETCH_NO_INDIRECTION)
+				return arg_ptr(cpu, f, fetch_le(cpu));
+		
 			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[Y]);
 
 		case AM_ZPX:
+			if (f & FETCH_NO_INDIRECTION)
+				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
 			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[X]);
 
 		case AM_ZPY:
+			if (f & FETCH_NO_INDIRECTION)
+				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
 			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[Y]);
 
 		case AM_ZIX:
@@ -510,8 +526,10 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 	}
 }
 
-void step(cpu_t *cpu)
+inline void step(cpu_t *cpu)
 {
+	static int steps;
+	steps++;
 	switch (cpu->mem[cpu->pc++])
 	{
 #define INST(mn, am, op) \
@@ -525,6 +543,14 @@ void step(cpu_t *cpu)
 
 		default:
 			die("Undefined opcode");
+	}
+
+	if (steps % 100 == 0)
+		printf("%d\n", steps);
+
+	if (g_scr)
+	{
+		sdl_screen(g_scr, cpu->mem + CPU_FB_ADDR);
 	}
 }
 

@@ -15,6 +15,7 @@
 #define NK_SDL_GL3_IMPLEMENTATION
 #include "nuklear/nuklear.h"
 #include "nuklear/demo/sdl_opengl3/nuklear_sdl_gl3.h"
+#undef SCREEN_ONLY_SDL
 #include "screen.h"
 
 #define WINDOW_WIDTH 720
@@ -116,7 +117,7 @@ void gui(cpu_t *cpu)
 		{
 			nk_layout_row_dynamic(ctx, 24, 1);
 			screen_scale = nk_propertyi(ctx, "Scale", 1, screen_scale, 8, 1, 1);
-			
+
 			nk_layout_row_static(ctx, screen_scale * 32, screen_scale * 32, 1);
 			screen(ctx, cpu->mem + CPU_FB_ADDR, screen_scale);
 		}

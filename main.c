@@ -1,12 +1,15 @@
 #include "cpu.h"
 #include "dbg.h"
 #include "gui.h"
+#include "screen.h"
 
 #include <bits/getopt_core.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+extern sdl_screen_t *g_scr;
 
 int main(int argc, char **argv)
 {
@@ -15,7 +18,8 @@ int main(int argc, char **argv)
 		helpflag = false,
 		debugflag = false,
 		should_read = false,
-		guiflag = false;
+		guiflag = false,
+		scrflag = false;
 
 	int disasm_len = 0;
 
@@ -23,7 +27,7 @@ int main(int argc, char **argv)
 
 	char c;
 
-	while ((c = getopt(argc, argv, "Ddrhgi:n:")) != -1)
+	while ((c = getopt(argc, argv, "Dsdrhgi:n:")) != -1)
 	{
 		switch (c)
 		{
@@ -48,6 +52,9 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			disasm_len = atoi(optarg);
+			break;
+		case 's':
+			scrflag = true;
 			break;
 		case 'h':
 		case '?':
@@ -81,6 +88,12 @@ int main(int argc, char **argv)
 	{
 		puts("6502 toolchain by swissChili <swisschili.sh>");
 		printf("%s -h  for help\n", argv[0]);
+	}
+
+	if (scrflag)
+	{
+		sdl_screen_t scr = new_sdl_screen(8);
+		g_scr = &scr;
 	}
 
 	if (guiflag)

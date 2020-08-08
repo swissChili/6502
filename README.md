@@ -1,6 +1,10 @@
 # 6502 Toolchain
 
-![Screenshot](screenshot.png)
+<center>
+	**Click for demonstration:**
+
+	[![Screenshot](screenshot.png)](colors.webm)
+</center>
 
 This project aims to create a portable toolchain for developing,
 testing and debugging programs for the 6502 processor. An assembler
