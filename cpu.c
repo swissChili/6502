@@ -22,7 +22,7 @@ sdl_screen_t *g_scr = NULL;
 
 void reset(cpu_t *cpu)
 {
-	cpu->regs[SP] = 0xFD; // stack at is 0x100 + SP
+	cpu->regs[SP] = 0xFF; // stack at is 0x100 + SP
 	cpu->pc = 0x600; // arbitrary program counter start
 	cpu->running = true;
 	memset(cpu->mem + 0x100, 0, 0xFE);
@@ -31,7 +31,7 @@ void reset(cpu_t *cpu)
 cpu_t new_cpu()
 {
 	cpu_t cpu = { 0 };
-	cpu.regs[SP] = 0xFD; // stack at is 0x100 + SP
+	cpu.regs[SP] = 0xFF; // stack at is 0x100 + SP
 	cpu.pc = 0x600; // arbitrary program counter start
 	cpu.running = true;
 	cpu.mem = malloc(0xFFFF);
@@ -396,6 +396,7 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 
 		case JSR:
 			stack_pushle(cpu, cpu->pc);
+			cpu->pc = a.ptr;
 			break;
 
 		case RTS:

@@ -163,7 +163,7 @@ void gui(cpu_t *cpu)
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{
 			nk_layout_row_static(ctx, 24, 48, 2);
-			for (int i = 0xFD; i >= 0; i--)
+			for (int i = 0xFF; i >= 0; i--)
 			{
 				char line[6];
 				sprintf(line, "$%x", 0x100 + i);
