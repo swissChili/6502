@@ -3,10 +3,8 @@
 #include "common.h"
 
 #include <SDL2/SDL.h>
-
-#ifndef NO_PTHREAD
 #include <pthread.h>
-#endif
+
 
 struct nk_color byte_to_color(uint8_t b)
 {
@@ -101,25 +99,23 @@ bool sdl_screen(sdl_screen_t *scr, uint8_t *mem, bool dirty)
 	return false;
 }
 
-
-#ifndef NO_PTHREAD
-
 bool g_screen_thread_halt = false;
-
 
 void *screen_thread(uint8_t *mem)
 {
 	sdl_screen_t scr = new_sdl_screen(8);
+	
+	pthread_cleanup_push(((void (*)(void *))&free_sdl_screen), ((void *)&scr));
+
 	while (true)
 	{
 		if (sdl_screen(&scr, mem, true) || g_screen_thread_halt)
 			break;
 	}
-	free_sdl_screen(&scr);
 
-	exit(0);
+	pthread_cleanup_pop(true);
 
-	return NULL;
+	pthread_exit(NULL);
 }
 
 pthread_t start_screen_thread(uint8_t *mem)
@@ -128,5 +124,3 @@ pthread_t start_screen_thread(uint8_t *mem)
 	pthread_create(&thread, NULL, (void *(*)(void *))&screen_thread, mem);
 	return thread;
 }
-
-#endif

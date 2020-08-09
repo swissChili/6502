@@ -2,11 +2,15 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <mqueue.h>
 
 #define REGISTERS R(A) R(X) R(Y) R(SP)
 #define CPU_FB_ADDR 0x200
 #define CPU_FB_W 32
 #define CPU_FB_H 32
+
+#define MQ_BUF_LEN 512
+#define MQ_NAME "/6502-to-cpu"
 
 enum // Registers
 {
@@ -148,3 +152,4 @@ void disas_num(cpu_t *cpu, uint16_t num);
 // Buffer must be freed by user
 char *disas_step(cpu_t *cpu);
 void run(cpu_t *cpu);
+void run_mq(cpu_t *cpu, mqd_t mq);

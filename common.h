@@ -10,7 +10,7 @@
 
 #define ASSERT(message, body) \
 	{ \
-		if (!body) \
+		if (!(body)) \
 			THROW("Assert failed: " message " [" #body "]"); \
 	}
 

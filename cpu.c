@@ -4,6 +4,8 @@
 #define SCREEN_ONLY_SDL
 #include "screen.h"
 
+#include "dbg.h"
+#include <errno.h>
 #include <endian.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -539,8 +541,6 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 
 void step(cpu_t *cpu)
 {
-	static int steps;
-	steps++;
 	cpu->screen_dirty = false;
 	uint8_t pc = cpu->pc;
 	uint8_t op = cpu->mem[cpu->pc++];
@@ -559,17 +559,6 @@ void step(cpu_t *cpu)
 			warn("Undefined opcode %x near %x [%x]", op, pc, cpu->mem[pc]);
 			THROW("Undefined opcode");
 	}
-
-	if (steps % 100 == 0)
-		printf("%d\n", steps);
-
-// If can't run screen in seperate thread, just run it here (bad)
-#ifdef NO_PTHREAD
-	if (g_scr)
-	{
-		sdl_screen(g_scr, cpu->mem + CPU_FB_ADDR, cpu->screen_dirty);
-	}
-#endif
 }
 
 int dump_inst(cpu_t *cpu, char *buf, const char *mn, uint16_t addr, uint8_t am)
@@ -676,4 +665,35 @@ void run(cpu_t *cpu)
 	}
 
 	printf("CPU Halted\n");
+}
+
+void run_mq(cpu_t *cpu, mqd_t mq)
+{
+	char buf[MQ_BUF_LEN];
+	bool running;
+
+	while (true)
+	{
+		if (running)
+		{
+			if (cpu->running)
+				step(cpu);
+			else
+				running = false;
+		}
+
+		ssize_t recvd = mq_receive(mq, buf, MQ_BUF_LEN * 2, NULL);
+
+		if (recvd == -1 && errno != EAGAIN)
+		{
+			printf("errno = %d\n", errno);
+			THROW("mq_receive returned -1");
+		}
+
+		if (recvd > 0)
+		{
+			if (debug_stmt(cpu, buf, &running))
+				break;
+		}
+	}
 }

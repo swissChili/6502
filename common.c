@@ -9,7 +9,7 @@ unsigned g_catch_len;
 
 void throw_(const char *msg, const char *file, unsigned int line)
 {
-	printf("\033[31mException thrown:\033[33m %s:%d\033[0m %s\n", file, line, msg);
+	fprintf(stderr, "\033[31mException thrown:\033[33m %s:%d\033[0m %s\n", file, line, msg);
 
 	for (int i = g_catch_len - 1; i >= 0; i--)
 	{

@@ -6,23 +6,26 @@
 
 #include <bits/getopt_core.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-extern sdl_screen_t *g_scr;
-
-#ifndef NO_PTHREAD
 #include <pthread.h>
+#include <mqueue.h>
+#include <sys/stat.h>
 
 
 void cleanup_screen_thread(pthread_t thread)
 {
-	g_screen_thread_halt = true;
 	puts("Cleaning up screen...");
-	pthread_join(thread, NULL);
+	pthread_cancel(thread);
 }
-#endif
+
+void cleanup_debug_prompt_thread(pthread_t thread)
+{
+	puts("Cleaning up debug prompt...");
+	pthread_cancel(thread);
+}
 
 int main(int argc, char **argv)
 {
@@ -97,11 +100,28 @@ int main(int argc, char **argv)
 	}
 
 	cpu_t cpu;
+	mqd_t mq_to_cpu;
+
+	struct mq_attr attrs;
+	attrs.mq_maxmsg = 10;
+	attrs.mq_msgsize = MQ_BUF_LEN;
 
 	if (should_read)
 	{
 		cpu = new_cpu();
 		fread(cpu.mem + 0x600, 0xFFFF - 0x600, 1, input);
+		
+		int unlink = mq_unlink(MQ_NAME);
+		if (unlink < 0 && errno != ENOENT)
+		{
+			printf("Warning: mq_unlink() error: %d %s\n", errno, strerror(errno));
+		}
+		
+		mq_to_cpu = mq_open(MQ_NAME, O_RDWR | O_CREAT | O_NONBLOCK, S_IWUSR|S_IRUSR, &attrs);
+		printf("error after mq_open (%ld) = %d %s\n", attrs.mq_msgsize, errno, strerror(errno));
+		ASSERT("Open message queue for emulator", mq_to_cpu > 0)
+
+		mq_send(mq_to_cpu, "init", 5, 2);
 	}
 	else
 	{
@@ -111,12 +131,7 @@ int main(int argc, char **argv)
 
 	if (scrflag)
 	{
-#ifndef NO_PTHREAD
 		CATCH(&cleanup_screen_thread, start_screen_thread(cpu.mem + CPU_FB_ADDR));
-#else
-		sdl_screen_t scr = new_sdl_screen(8);
-		g_scr = &scr;
-#endif
 	}
 
 	if (guiflag && scrflag)
@@ -126,11 +141,12 @@ int main(int argc, char **argv)
 
 	if (guiflag)
 	{
-		gui(&cpu);
+		start_gui(mq_to_cpu, &cpu);
+		run_mq(&cpu, mq_to_cpu);
 	}
 	else if (disflag)
 	{
-		disas_num(&cpu, 12);
+		disas_num(&cpu, 64);
 	}
 	else if (runflag)
 	{
@@ -143,14 +159,13 @@ int main(int argc, char **argv)
 	}
 	else if (debugflag)
 	{
-		debug(&cpu);
+		CATCH(&cleanup_debug_prompt_thread, start_debug_prompt(mq_to_cpu, &cpu));
+		run_mq(&cpu, mq_to_cpu);
 	}
-	
-#ifdef NO_PTHREAD
-	if (scrflag)
-		free_sdl_screen(g_scr);
-#endif
 
 	if (should_read)
+	{
 		free_cpu(&cpu);
+		mq_close(mq_to_cpu);
+	}
 }

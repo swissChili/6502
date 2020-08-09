@@ -23,8 +23,19 @@
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
 
-void gui(cpu_t *cpu)
+typedef struct
 {
+	cpu_t *cpu;
+	mqd_t mq;
+} gui_arg_t;
+
+void gui(gui_arg_t *arg)
+{
+	cpu_t *cpu = arg->cpu;
+	mqd_t mq = arg->mq;
+
+	free(arg);
+
 	SDL_Window *win;
 	SDL_GLContext glContext;
 	int win_width, win_height;
@@ -222,4 +233,14 @@ cleanup:
 	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(win);
 	SDL_Quit();
+}
+
+
+void start_gui(mqd_t mq, cpu_t *cpu)
+{
+	pthread_t gui_thread;
+	gui_arg_t *arg = malloc(sizeof(gui_arg_t));
+	arg->cpu = cpu;
+	arg->mq = mq;
+	pthread_create(&gui_thread, NULL, (void *(*)(void *))&gui, arg);
 }
