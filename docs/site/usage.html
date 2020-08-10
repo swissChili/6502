@@ -1,0 +1,62 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width">
+		<link rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/default.min.css">
+		<link rel="stylesheet" href="styles.css">
+		<title>Usage</title>
+	</head>
+	<body>
+		<main class="split container">
+			<div class="sidebar">
+				<h2><a href="/">6502</a></h2>
+
+				<p>
+					6502 Toolchain written by <a href="https://github.com/swissChili">swissChili</a>
+				</p>
+
+				<ul>
+					<li><a href="https://github.com/swissChili/6502">Git</a></li>
+					<li><a href="/usage.html">Basic usage</a></li>
+					<li><a href="/examples.html">Example programs</a></li>
+					<li><a href="/building.html">Building from source</a></li>
+				</ul>
+			</div>
+			<div class="body">
+				<h1> Basic Usage</h1>
+The <code>6502</code> command takes some arguments that control how it functions. Each flag is documented
+here. Note that only UNIX style flags are supported, not GNU style. This uses the standard
+<code>getopt()</code> function, so flags work the same as any UNIX command.
+<h4> <code>-g</code></h4>
+Opens a GUI debugger window.
+<h4> <code>-s</code></h4>
+Opens a window that shows the emulators screen. Cannot be used in conjunction with <code>-g</code>.
+<h4> <code>-H</code></h4>
+Keep the emulator running after the CPU halts (after an interrupt is triggered). Useful
+for debugging short programs. Does nothing when used with <code>-D</code>.
+<h4> <code>-d</code></h4>
+Disassemble the input file, printing the whole disassembly to <code>stdout</code>. You probably want
+to use this with <code>-n</code>
+<h4> <code>-r</code></h4>
+Run the input file. Can be used in conjunction with <code>-s</code> to run and display the output.
+<h4> <code>-D</code></h4>
+Open CLI debugger. Can be used with <code>-s</code> to view screen while debugging. 
+<h4> <code>-i input</code></h4>
+Read <code>input</code> into the CPUs memory.
+<h4> <code>-n number_of_instructions</code></h4>
+Disassemble only <code>number_of_instructions</code> instructions.
+<h4> <code>-h, -?</code></h4>
+Print a help message.
+			</div>
+		</main>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', (event) => {
+				document.querySelectorAll('pre code').forEach((block) => {
+					hljs.highlightBlock(block);
+				});
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,54 @@
+html,
+body {
+  font-family: sans-serif;
+}
+
+body {
+  display: grid;
+  place-items: center center;
+}
+
+h4 code {
+  font-size: 1.5em;
+}
+
+code {
+  background: #f2f4f4;
+  border-radius: 5px;
+  padding: 3px 5px 3px 5px;
+}
+
+.container {
+  width: 60em;
+}
+
+.nav {
+  font-size: 1.5rem;
+  display: flex;
+  flex-direction: row;
+}
+.nav .wide {
+  flex: 1;
+  font-weight: bold;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 16em auto;
+}
+
+video {
+  width: 100%;
+}
+
+@media screen and (max-width: 58em) {
+  .split {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    width: calc(100% - 2em);
+    margin: 1em;
+  }
+}

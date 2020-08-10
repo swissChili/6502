@@ -1,0 +1,61 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width">
+		<link rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/default.min.css">
+		<link rel="stylesheet" href="styles.css">
+		<title>Building</title>
+	</head>
+	<body>
+		<main class="split container">
+			<div class="sidebar">
+				<h2><a href="/">6502</a></h2>
+
+				<p>
+					6502 Toolchain written by <a href="https://github.com/swissChili">swissChili</a>
+				</p>
+
+				<ul>
+					<li><a href="https://github.com/swissChili/6502">Git</a></li>
+					<li><a href="/usage.html">Basic usage</a></li>
+					<li><a href="/examples.html">Example programs</a></li>
+					<li><a href="/building.html">Building from source</a></li>
+				</ul>
+			</div>
+			<div class="body">
+				<h1> Building from source</h1>
+You need the following libraries installed to build the emulator:
+<br>
+<code>pthread</code> <code>rt</code> <code>m</code> <code>SDL2</code> <code>GL</code> <code>GLEW</code> <code>GLU</code> <code>readline</code>
+<br>
+The first three will be included on any POSIX compliant operating system (OS X, Linux, BSD, etc).
+To install SDL2, visit its <a href="https://www.libsdl.org/">website</a> or use your distributions
+package manager.
+<br>
+<br>
+You also need <code>awk</code> installed if you want to modify the <code>6502.csv</code> file from which parts of the
+emulator are generated. If you don't want to do this, run cmake with <code>-DGEN_INSTRUCTIONS_HEADER=OFF</code>
+<br>
+<br>
+You may be able to build this on Windows using Cygwin or MinGW, but I haven't tested that.
+<br>
+<br>
+Run the usual commands to build with cmake:
+<pre><code class>$ mkdir build
+$ cd build
+$ cmake ..
+$ make -j
+$ ./6502 # you built it, nice</code></pre>
+			</div>
+		</main>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', (event) => {
+				document.querySelectorAll('pre code').forEach((block) => {
+					hljs.highlightBlock(block);
+				});
+			});
+		</script>
+	</body>
+</html>
