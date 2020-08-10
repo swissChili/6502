@@ -146,14 +146,6 @@ void cmp(cpu_t *cpu, uint8_t reg, uint8_t mem)
 	}
 }
 
-uint16_t scr_dirty(cpu_t *cpu, uint16_t mem)
-{
-	if (mem >= 0x200 && mem <= 0x200 + 32 * 32)
-		cpu->screen_dirty = true;
-
-	return mem;
-}
-
 void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 {
 	// used to save space
@@ -174,7 +166,7 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 
 		#define R(reg) \
 			case ST##reg: \
-				cpu->mem[scr_dirty(cpu, a.ptr)] = cpu->regs[reg]; \
+				cpu->mem[a.ptr] = cpu->regs[reg]; \
 				break; \
 
 			REGS
@@ -204,8 +196,8 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 		}
 
 		case INC:
-			cpu->mem[scr_dirty(cpu, scr_dirty(cpu, a.ptr))]++;
-			stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+			cpu->mem[a.ptr]++;
+			stat_nz(cpu, cpu->mem[a.ptr]);
 			break;
 
 		case INX:
@@ -219,8 +211,8 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			break;
 
 		case DEC:
-			cpu->mem[scr_dirty(cpu, a.ptr)]--;
-			stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+			cpu->mem[a.ptr]--;
+			stat_nz(cpu, cpu->mem[a.ptr]);
 			break;
 
 		case DEX:
@@ -245,9 +237,9 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			}
 			else
 			{
-				cpu->status.carry = cpu->mem[scr_dirty(cpu, a.val)] >> 7;
-				cpu->mem[scr_dirty(cpu, a.ptr)] <<= 1;
-				stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+				cpu->status.carry = cpu->mem[a.val] >> 7;
+				cpu->mem[a.ptr] <<= 1;
+				stat_nz(cpu, cpu->mem[a.ptr]);
 			}
 			break;
 
@@ -260,9 +252,9 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			}
 			else
 			{
-				cpu->status.carry = cpu->mem[scr_dirty(cpu, a.val)] & 7;
-				cpu->mem[scr_dirty(cpu, a.ptr)] >>= 1;
-				stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+				cpu->status.carry = cpu->mem[a.val] & 7;
+				cpu->mem[a.ptr] >>= 1;
+				stat_nz(cpu, cpu->mem[a.ptr]);
 			}
 			break;
 
@@ -275,9 +267,9 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			}
 			else
 			{
-				cpu->status.carry = cpu->mem[scr_dirty(cpu, a.val)] >> 7;
-				cpu->mem[scr_dirty(cpu, a.ptr)] = rol(a.val, 1);
-				stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+				cpu->status.carry = cpu->mem[a.val] >> 7;
+				cpu->mem[a.ptr] = rol(a.val, 1);
+				stat_nz(cpu, cpu->mem[a.ptr]);
 			}
 			break;
 
@@ -290,9 +282,9 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 			}
 			else
 			{
-				cpu->status.carry = cpu->mem[scr_dirty(cpu, a.val)] & 1;
-				cpu->mem[scr_dirty(cpu, a.ptr)] = ror(a.val, 1);
-				stat_nz(cpu, cpu->mem[scr_dirty(cpu, a.ptr)]);
+				cpu->status.carry = cpu->mem[a.val] & 1;
+				cpu->mem[a.ptr] = ror(a.val, 1);
+				stat_nz(cpu, cpu->mem[a.ptr]);
 			}
 			break;
 
@@ -423,10 +415,10 @@ void execute(cpu_t *cpu, const char *mnemonic, uint8_t op, arg_t a, uint8_t am)
 	#undef REGS
 }
 
-uint16_t fetch_le(cpu_t *cpu)
+uint16_t fetch_le(cpu_t *cpu, uint16_t *pc)
 {
-	uint8_t a = cpu->mem[scr_dirty(cpu, cpu->pc++)];
-	uint8_t b = cpu->mem[scr_dirty(cpu, cpu->pc++)];
+	uint8_t a = cpu->mem[(*pc)++];
+	uint8_t b = cpu->mem[(*pc)++];
 	return le_to_native(a, b);
 }
 
@@ -448,7 +440,7 @@ arg_t arg(uint16_t v, uint16_t a)
 	return (arg_t){ v, a };
 }
 
-arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
+arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f, uint16_t *pc)
 {
 	switch (am)
 	{
@@ -459,59 +451,55 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 		// In both cases return immediate 8 bit value
 		case AM_IMM:
 		case AM_ZP:
-			return arg_imm(cpu->mem[scr_dirty(cpu, cpu->pc++)]);
+			return arg_imm(cpu->mem[(*pc)++]);
 
 		case AM_ABS:
-			return arg_ptr(cpu, f, fetch_le(cpu));
+			return arg_ptr(cpu, f, fetch_le(cpu, pc));
 
 		case AM_REL:
 		{
-			// Aparently, PC should will point to the NEXT opcode
-			// I can't find any documentation on this unfortunately, but
-			// I have discovered this through testing the output of other
-			// assemblers.
-			uint16_t pc = cpu->pc + 1;
-			return arg_ptr(cpu, f, (int8_t)cpu->mem[scr_dirty(cpu, cpu->pc++)] + pc);
+			uint16_t pc_hi = * pc + 1;
+			return arg_ptr(cpu, f, (int8_t)cpu->mem[(*pc)++] + pc_hi);
 		}
 
 		case AM_IND:
 		{
-			uint16_t addr = fetch_le(cpu);
+			uint16_t addr = fetch_le(cpu, pc);
 
 			if (f & FETCH_NO_INDIRECTION)
 				return arg_imm(addr);
 
-			uint8_t low = cpu->mem[scr_dirty(cpu, addr)],
-				high = cpu->mem[scr_dirty(cpu, addr + 1)];
+			uint8_t low = cpu->mem[addr],
+				high = cpu->mem[addr + 1];
 
 			return arg_ptr(cpu, f, le_to_native(low, high));
 		}
 
 		case AM_AX:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, fetch_le(cpu));
+				return arg_ptr(cpu, f, fetch_le(cpu, pc));
 
-			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[X]);
+			return arg_ptr(cpu, f, fetch_le(cpu, pc) + cpu->regs[X]);
 
 		case AM_AY:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, fetch_le(cpu));
+				return arg_ptr(cpu, f, fetch_le(cpu, pc));
 		
-			return arg_ptr(cpu, f, fetch_le(cpu) + cpu->regs[Y]);
+			return arg_ptr(cpu, f, fetch_le(cpu, pc) + cpu->regs[Y]);
 
 		case AM_ZPX:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
-			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[X]);
+				return arg_ptr(cpu, f, cpu->mem[(*pc)++]);
+			return arg_ptr(cpu, f, cpu->mem[(*pc)++] + cpu->regs[X]);
 
 		case AM_ZPY:
 			if (f & FETCH_NO_INDIRECTION)
-				return arg_ptr(cpu, f, cpu->mem[cpu->pc++]);
-			return arg_ptr(cpu, f, cpu->mem[cpu->pc++] + cpu->regs[Y]);
+				return arg_ptr(cpu, f, cpu->mem[(*pc)++]);
+			return arg_ptr(cpu, f, cpu->mem[(*pc)++] + cpu->regs[Y]);
 
 		case AM_ZIX:
 		{
-			uint8_t zp = cpu->mem[cpu->pc++];
+			uint8_t zp = cpu->mem[(*pc)++];
 
 			if (f & FETCH_NO_INDIRECTION)
 				return arg_imm(zp);
@@ -523,12 +511,12 @@ arg_t fetch_addr(cpu_t *cpu, uint8_t am, uint f)
 
 		case AM_ZIY:
 		{
-			uint8_t zp = cpu->mem[scr_dirty(cpu, cpu->pc++)];
+			uint8_t zp = cpu->mem[(*pc)++];
 
 			if (f & FETCH_NO_INDIRECTION)
 				return arg_imm(zp);
 
-			uint16_t base = le_to_native(cpu->mem[zp], cpu->mem[scr_dirty(cpu, zp + 1)]);
+			uint16_t base = le_to_native(cpu->mem[zp], cpu->mem[zp + 1]);
 			return arg_ptr(cpu, f, base + cpu->regs[Y]);
 		}
 
@@ -548,7 +536,7 @@ void step(cpu_t *cpu)
 	{
 #define INST(mn, am, op) \
 		case op: \
-			execute(cpu, #mn, mn, fetch_addr(cpu, am, 0), am); \
+			execute(cpu, #mn, mn, fetch_addr(cpu, am, 0, &cpu->pc), am); \
 			break;
 
 		INSTRUCTIONS
@@ -602,19 +590,19 @@ int dump_inst(cpu_t *cpu, char *buf, const char *mn, uint16_t addr, uint8_t am)
 	return end - buf;
 }
 
-char *disas_step(cpu_t *cpu)
+char *disas_step(cpu_t *cpu, uint16_t *pc)
 {
 	char *buffer = malloc(80);
 	char *end = buffer;
 
 	// end += sprintf(buffer, "$%x", cpu->pc);
-	uint8_t op = cpu->mem[scr_dirty(cpu, cpu->pc++)];
+	uint8_t op = cpu->mem[(*pc)++];
 	switch (op)
 	{
 #define INST(mn, am, op) \
 		case op: \
 			end += dump_inst(cpu, end, #mn, \
-				fetch_addr(cpu, am, FETCH_NO_INDIRECTION).ptr, am); \
+				fetch_addr(cpu, am, FETCH_NO_INDIRECTION, pc).ptr, am); \
 			break;
 
 		INSTRUCTIONS
@@ -632,29 +620,27 @@ char *disas_step(cpu_t *cpu)
 
 void disas_num(cpu_t *cpu, uint16_t num)
 {
-	uint16_t pc = cpu->pc;
+	uint16_t pc = 0x600;
 	for (int i = 0; i < num; i++)
 	{
-		uint16_t last_pc = cpu->pc;
-		char *line = disas_step(cpu);
+		uint16_t last_pc = pc;
+		char *line = disas_step(cpu, &pc);
 		printf("$%x\t%s\n", last_pc, line);
 		free(line);
 	}
-	cpu->pc = pc;
 }
 
 void disas(cpu_t *cpu)
 {
-	uint16_t pc = cpu->pc;
+	uint16_t pc = 0x600;
 	// Raw binary, no way to know what's code what isn't
 	while (cpu->pc < 0xFFFF)
 	{
-		uint16_t last_pc = cpu->pc;
-		char *line = disas_step(cpu);
+		uint16_t last_pc = pc;
+		char *line = disas_step(cpu, &pc);
 		printf("$%x\t%s\n", last_pc, line);
 		free(line);
 	}
-	cpu->pc = pc;
 }
 
 void run(cpu_t *cpu)

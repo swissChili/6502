@@ -150,6 +150,6 @@ void reset(cpu_t *cpu);
 void disas(cpu_t *cpu);
 void disas_num(cpu_t *cpu, uint16_t num);
 // Buffer must be freed by user
-char *disas_step(cpu_t *cpu);
+char *disas_step(cpu_t *cpu, uint16_t *pc);
 void run(cpu_t *cpu);
 void run_mq(cpu_t *cpu, mqd_t mq);

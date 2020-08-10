@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "common.h"
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
@@ -28,6 +29,11 @@ typedef struct
 	cpu_t *cpu;
 	mqd_t mq;
 } gui_arg_t;
+
+static void cmd(mqd_t mq, char *msg)
+{
+	mq_send(mq, msg, strlen(msg) + 1, 2);
+}
 
 void gui(gui_arg_t *arg)
 {
@@ -76,8 +82,7 @@ void gui(gui_arg_t *arg)
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glewExperimental = 1;
 	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to setup GLEW\n");
-		exit(1);
+		THROW("Failed to setup GLEW\n");
 	}
 
 	ctx = nk_sdl_init(win);
@@ -100,9 +105,6 @@ void gui(gui_arg_t *arg)
 		}
 		nk_input_end(ctx);
 
-		if (cpu_running && cpu->running)
-			step(cpu);
-
 		if (!cpu->running)
 			cpu_running = false;
 
@@ -111,10 +113,10 @@ void gui(gui_arg_t *arg)
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{
 			nk_layout_row_dynamic(ctx, 30, 4);
-			cpu->pc = nk_propertyi(ctx, "PC", 0, cpu->pc, 0xFFFF, 1, 20.0f);
-			cpu->regs[A] = nk_propertyi(ctx, "A", 0, cpu->regs[A], 0xFF, 1, 20.0f);
-			cpu->regs[X] = nk_propertyi(ctx, "X", 0, cpu->regs[X], 0xFF, 1, 20.0f);
-			cpu->regs[Y] = nk_propertyi(ctx, "Y", 0, cpu->regs[Y], 0xFF, 1, 20.0f);
+			uint16_t pc = nk_propertyi(ctx, "PC", 0, cpu->pc, 0xFFFF, 1, 20.0f);
+			uint8_t rega = nk_propertyi(ctx, "A", 0, cpu->regs[A], 0xFF, 1, 20.0f),
+				regx = nk_propertyi(ctx, "X", 0, cpu->regs[X], 0xFF, 1, 20.0f),
+				regy = nk_propertyi(ctx, "Y", 0, cpu->regs[Y], 0xFF, 1, 20.0f);
 		}
 		nk_end(ctx);
 
@@ -123,7 +125,7 @@ void gui(gui_arg_t *arg)
 			NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
 		{
 			nk_layout_row_dynamic(ctx, 24, 1);
-			screen_scale = nk_propertyi(ctx, "Scale", 1, screen_scale, 8, 1, 1);
+			screen_scale = nk_propertyi(ctx, "Scale", 1, screen_scale, 16, 1, 1);
 
 			nk_layout_row_static(ctx, screen_scale * 32, screen_scale * 32, 1);
 			screen(ctx, cpu->mem + CPU_FB_ADDR, screen_scale);
@@ -138,23 +140,22 @@ void gui(gui_arg_t *arg)
 			disas_start = nk_propertyi(ctx, "Start", 0, disas_start, 0xFFFF, 1, 20.0f);
 			disas_end = nk_propertyi(ctx, "End", 0, disas_end, 0xFFFF, 1, 20.0f);
 
-			uint16_t pc = cpu->pc;
-
-			for (cpu->pc = disas_start; cpu->pc < disas_end;)
+			for (uint16_t pc = disas_start; pc < disas_end;)
 			{
 				nk_layout_row_begin(ctx, NK_STATIC, 24, 2);
 
-				uint16_t this_pc = cpu->pc;
+				uint16_t cpu_pc = cpu->pc,
+					this_pc = pc;
 			
 				char addr[6];
-				sprintf(addr, "$%x", this_pc);
+				sprintf(addr, "$%x", pc);
 
 				nk_layout_row_push(ctx, 48);
 				nk_label(ctx, addr, NK_TEXT_LEFT);
 
 				nk_layout_row_push(ctx, 120);
-				char *line = disas_step(cpu);
-				if (pc == this_pc)
+				char *line = disas_step(cpu, &pc);
+				if (cpu_pc == this_pc)
 				{
 					nk_label_colored(ctx, line, NK_TEXT_LEFT, selected);
 				}
@@ -164,8 +165,6 @@ void gui(gui_arg_t *arg)
 				}
 				free(line);
 			}
-
-			cpu->pc = pc;
 		}
 		nk_end(ctx);
 
@@ -202,18 +201,19 @@ void gui(gui_arg_t *arg)
 			if (nk_button_label(ctx, "Reset"))
 			{
 				puts("cpu reset");
-				reset(cpu);
+				cmd(mq, "reset");
 			}
 
 			nk_layout_row_dynamic(ctx, 30, 2);
 			if (nk_button_label(ctx, "Step"))
 			{
 				printf("step pressed!\n");
-				step(cpu);
+				cmd(mq, "step");
 			}
 
 			if (nk_button_label(ctx, cpu_running ? "Stop" : "Run"))
 			{
+				cmd(mq, cpu_running ? "pause" : "run");
 				cpu_running = !cpu_running;
 				puts(cpu_running ? "cpu running" : "cpu stopped");
 			}
@@ -233,6 +233,8 @@ cleanup:
 	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(win);
 	SDL_Quit();
+
+	cmd(mq, "quit");
 }
 
 

@@ -26,18 +26,20 @@ void screen(struct nk_context *ctx, uint8_t *mem, uint8_t size)
 	if (!state)
 		return;
 
-	//nk_fill_rect(out, bounds, 0, nk_rgb(255, 0, 0));
+	nk_fill_rect(out, bounds, 0, nk_rgb(0, 0, 0));
 
-	//return;
 
 	for (int i = 0; i < CPU_FB_H; i++)
 	{
 		for (int j = 0; j < CPU_FB_W; j++)
 		{
-			nk_fill_rect(out,
-				nk_rect(bounds.x + i * size, bounds.y + j * size,
-					size, size), 0.0f,
-				byte_to_color(mem[i + CPU_FB_H * j]));
+			if (mem[i + CPU_FB_H * j])
+			{
+				nk_fill_rect(out,
+					nk_rect(bounds.x + i * size, bounds.y + j * size,
+						size, size), 0.0f,
+					byte_to_color(mem[i + CPU_FB_H * j]));
+			}
 		}
 	}
 }

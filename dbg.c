@@ -52,6 +52,10 @@ bool debug_stmt(cpu_t *cpu, char *input, bool *running)
 	{
 		*running = true;
 	}
+	else if (!strcmp(tok, "pause"))
+	{
+		*running = false;
+	}
 	else if (!strcmp(tok, "quit") || !strcmp(tok, "exit"))
 	{
 		printf("Bye\n");
