@@ -35,6 +35,12 @@ static void cmd(mqd_t mq, char *msg)
 	mq_send(mq, msg, strlen(msg) + 1, 2);
 }
 
+#define cmdf(mq, buffer, pattern, args...) \
+	{ \
+		sprintf(buffer, pattern, ##args); \
+		cmd(mq, buffer); \
+	}
+
 void gui(gui_arg_t *arg)
 {
 	cpu_t *cpu = arg->cpu;
@@ -118,6 +124,17 @@ void gui(gui_arg_t *arg)
 			uint8_t rega = nk_propertyi(ctx, "A", 0, cpu->regs[A], 0xFF, 1, 20.0f),
 				regx = nk_propertyi(ctx, "X", 0, cpu->regs[X], 0xFF, 1, 20.0f),
 				regy = nk_propertyi(ctx, "Y", 0, cpu->regs[Y], 0xFF, 1, 20.0f);
+
+			char buffer[64];
+
+			if (pc != cpu->pc)
+				cmdf(mq, buffer, "set PC #$%x", pc);
+			if (rega != cpu->regs[A])
+				cmdf(mq, buffer, "set A #$%x", rega);
+			if (regx != cpu->regs[X])
+				cmdf(mq, buffer, "set X #$%x", regx);
+			if (regy != cpu->regs[Y])
+				cmdf(mq, buffer, "set Y #$%x", regy);
 		}
 		nk_end(ctx);
 

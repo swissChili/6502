@@ -65,18 +65,21 @@ bool debug_stmt(cpu_t *cpu, char *input, bool *running)
 		else if (sscanf(tok, "%s #$%hhx", reg_name, &val))
 		{
 			int reg = -1;
-			if (!strcasecmp(tok, "A"))
+			if (!strcasecmp(reg_name, "A"))
 				reg = A;
-			else if (!strcasecmp(tok, "X"))
+			else if (!strcasecmp(reg_name, "X"))
 				reg = X;
-			else if (!strcasecmp(tok, "Y"))
+			else if (!strcasecmp(reg_name, "Y"))
 				reg = Y;
-			else if (!strcasecmp(tok, "SP"))
+			else if (!strcasecmp(reg_name, "SP"))
 				reg = SP;
-			else if (!strcasecmp(tok, "PC"))
+			else if (!strcasecmp(reg_name, "PC"))
 				cpu->pc = val;
-			else if (!strcasecmp(tok, "SR"))
+			else if (!strcasecmp(reg_name, "SR"))
 				*(uint8_t *)&cpu->status = val;
+			else
+				printf("set command expected a register as the first argument, got %s\n",
+					reg_name);
 
 			if (reg != -1)
 			{
