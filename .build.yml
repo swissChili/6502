@@ -1,0 +1,21 @@
+image: ubuntu/lts
+packages:
+  - build-essential
+  - cmake
+  - libsdl2-dev
+  - libreadline-dev
+  - libglew-dev
+sources:
+  - https://github.com/swissChili/6502
+tasks:
+  - setup: |
+      cd 6502
+      mkdir build
+      cd build
+      cmake ..
+  - build: |
+      cd 6502/build
+      make -j
+      ./6502 -h
+artifacts:
+  - 6502/build/6502
