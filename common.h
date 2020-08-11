@@ -28,6 +28,7 @@ extern catch_t g_catch[MAX_CATCH_LEN];
 extern unsigned g_catch_len;
 
 void throw_(const char *msg, const char *file, unsigned int line);
+void unwind();
 void catch_(handle_t hdl, intptr_t arg);
 
 #define THROW(msg) throw_(msg, __FILENAME__, __LINE__)

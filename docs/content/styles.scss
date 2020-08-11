@@ -1,7 +1,29 @@
-html,
-body
+$code: #f2f4f4;
+
+$bg: #1d1F21;
+$fg: #abb2bf;
+
+$black:   #1e2127;
+$red:     #e06c75;
+$green:   #a0ea98;
+$yellow:  #d1ed8b;
+$blue:    #81A1C1;
+$magenta: #cb80ce;
+$cyan:    #87dfe5;
+$white:   #abb2bf;
+
+@import url('https://rsms.me/inter/inter.css');
+html
 {
-	font-family: /*'Segoe UI', 'Roboto', 'San Francisco', 'IBM Plex Sans',*/ sans-serif;
+	font-family: 'Inter', sans-serif;
+}
+
+@supports (font-variation-settings: normal)
+{
+	html
+	{
+		font-family: 'Inter var', sans-serif;
+	}
 }
 
 body
@@ -18,9 +40,22 @@ h4 code
 
 code
 {
-	background: #f2f4f4;
+	background: $code;
 	border-radius: 5px;
 	padding: 3px 5px 3px 5px;
+}
+
+a,
+a:visited
+{
+	color: #0242f2;
+	text-decoration: underline;
+
+	&:hover
+	{
+		color: #0056b3;
+		text-decoration: none;
+	}
 }
 
 .container
@@ -45,6 +80,11 @@ code
 {
 	display: grid;
 	grid-template-columns: 16em auto;
+
+	.sidebar
+	{
+		margin-right: 1em;
+	}
 }
 
 video
@@ -58,6 +98,11 @@ video
 	{
 		display: flex;
 		flex-direction: column;
+
+		.sidebar
+		{
+			margin-right: none;
+		}
 	}
 
 	.container
@@ -65,4 +110,63 @@ video
 		width: calc(100% - 2em);
 		margin: 1em;
 	}
+}
+
+.hljs
+{
+	display: block;
+	overflow-x: auto;
+	background: $code;
+	padding: 1em;
+	color: $black;
+	font-size: 1rem;
+	font-family: monospace;
+	font-variant-ligatures: normal;
+	font-weight: 500;
+}
+.hljs-comment, .hljs-quote
+{
+	font-style: italic;
+	color: $green;
+}
+.hljs-name, .hljs-selector-id, .hljs-selector-class, .hljs-regexp, .hljs-deletion
+{
+	font-weight: 500;
+}
+.hljs-variable, .hljs-template-variable, .hljs-tag
+{
+	font-weight: 600;
+}
+.hljs-number, .hljs-builtin-name, .hljs-literal, .hljs-type, .hljs-params, .hljs-link
+{
+	font-weight: 400;
+	font-style: italic;
+}
+.hljs-attribute
+{
+	font-weight: 700;
+}
+.hljs-string,  .hljs-symbol, .hljs-bullet, .hljs-addition
+{
+	font-style: italic;
+	color: $red;
+}
+.hljs-title, .hljs-section
+{
+	font-style: underline;
+	color: $blue;
+}
+.hljs-keyword, .hljs-built_in, .hljs-selector-tag
+{
+	color: $blue;
+	font-weight: bold;
+}
+.hljs-emphasis
+{
+	font-weight: 700;
+}
+.hljs-strong
+{
+	font-weight: 700;
+	opacity: 1;
 }

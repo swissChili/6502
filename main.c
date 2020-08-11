@@ -163,6 +163,8 @@ int main(int argc, char **argv)
 		run_mq(&cpu, mq_to_cpu);
 	}
 
+	unwind();
+
 	if (should_read)
 	{
 		free_cpu(&cpu);

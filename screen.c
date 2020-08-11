@@ -66,7 +66,7 @@ sdl_screen_t new_sdl_screen(uint8_t size)
 
 void free_sdl_screen(sdl_screen_t *scr)
 {
-	//free(scr->fb);
+	puts("Freed SDL Screen");
 	SDL_DestroyTexture(scr->tex);
 	SDL_DestroyRenderer(scr->r);
 	SDL_DestroyWindow(scr->win);

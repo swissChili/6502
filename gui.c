@@ -100,7 +100,8 @@ void gui(gui_arg_t *arg)
 		nk_input_begin(ctx);
 		while (SDL_PollEvent(&evt))
 		{
-			if (evt.type == SDL_QUIT) goto cleanup;
+			if (evt.type == SDL_QUIT)
+				goto cleanup;
 			nk_sdl_handle_event(&evt);
 		}
 		nk_input_end(ctx);
@@ -235,6 +236,8 @@ cleanup:
 	SDL_Quit();
 
 	cmd(mq, "quit");
+
+	printf("Cleaned up GUI\n");
 }
 
 
