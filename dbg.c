@@ -48,6 +48,47 @@ bool debug_stmt(cpu_t *cpu, char *input, bool *running)
 			#undef R
 		}
 	}
+	else if (!strcmp(tok, "set"))
+	{
+		char reg_name[32];
+		uint16_t addr;
+		uint8_t val;
+
+		tok = strtok(NULL, "\0");
+
+		printf("%s\n", tok);
+
+		if (sscanf(tok, "$%hx #$%hhx", &addr, &val))
+		{
+			cpu->mem[addr] = val;
+		}
+		else if (sscanf(tok, "%s #$%hhx", reg_name, &val))
+		{
+			int reg = -1;
+			if (!strcasecmp(tok, "A"))
+				reg = A;
+			else if (!strcasecmp(tok, "X"))
+				reg = X;
+			else if (!strcasecmp(tok, "Y"))
+				reg = Y;
+			else if (!strcasecmp(tok, "SP"))
+				reg = SP;
+			else if (!strcasecmp(tok, "PC"))
+				cpu->pc = val;
+			else if (!strcasecmp(tok, "SR"))
+				*(uint8_t *)&cpu->status = val;
+
+			if (reg != -1)
+			{
+				cpu->regs[reg] = val;
+			}
+		}
+		else
+		{
+			printf("set command expects either a memory address and a constant, "
+				"or a register and a constant as arguments.\n");
+		}
+	}
 	else if (!strcmp(tok, "run"))
 	{
 		*running = true;
