@@ -2,9 +2,8 @@
 #include "../cpu.h"
 #include "../instructions.h"
 #include "../mnemonics.h"
+#include "map.h"
 
-#include <collect/map.h>
-#include <collect/vector.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -374,10 +373,10 @@ bool parse_arg(char *code, int am, inst_t *inst)
 
 uint32_t assemble(char *code, FILE *out)
 {
-	uintptr_t num_insts = 0;
+	uintptr_t num_insts = 0,
+		pc = 0x600;
 	uint32_t line_no = 1;
-	map *labels = new_map();
-	vector *insts = new_vector();
+	map_t *labels = new_map();
 	char *line;
 
 	printf("Assembling File\n");
@@ -397,14 +396,16 @@ uint32_t assemble(char *code, FILE *out)
 
 		if (label)
 		{
-			map_set(labels, label, (void *)num_insts);
-			printf("Set label %s at %lu\n", label, num_insts);
+			map_set(labels, label, (void *)pc);
+			printf("Set label %s at %lu\n", label, pc);
 		}
 
 		if (mn)
 		{
 #define MN(a) if (!strcasecmp(mn, #a)) \
+			{						   \
 				mnemonic = a;		   \
+			}						   \
 			else
 
 			MNEMONICS;
@@ -418,6 +419,7 @@ uint32_t assemble(char *code, FILE *out)
 			if (mnemonic == _mn && parse_arg(line, am, &arg)) \
 			{												  \
 				arg.opcode = op;							  \
+				pc += len;									  \
 				print_inst(&arg);							  \
 			}												  \
 			else
@@ -429,7 +431,6 @@ uint32_t assemble(char *code, FILE *out)
 #undef INST
 		}
 
-		num_insts++;
 		line = strtok(NULL, "\r\n");
 	}
 
