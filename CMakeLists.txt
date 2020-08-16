@@ -3,8 +3,11 @@ cmake_minimum_required(VERSION 3.0)
 project(6502 VERSION 0.1.0 LANGUAGES C)
 
 option(GEN_INSTRUCTIONS_HEADER ON)
+option(BUILD_ASSEMBLER ON)
 
 include_directories(nuklear)
+
+subdirs(as)
 
 if (${GEN_INSTRUCTIONS_HEADER})
 	add_custom_command(

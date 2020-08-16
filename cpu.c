@@ -11,9 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define die(m, ...) \
-	printf("\033[31m" m "\033[0m\n", ##__VA_ARGS__); \
-	exit(1);
 
 #define warn(m, ...) \
 	printf("\033[33m" m "\033[0m\n", ##__VA_ARGS__);
@@ -534,7 +531,7 @@ void step(cpu_t *cpu)
 	uint8_t op = cpu->mem[cpu->pc++];
 	switch (op)
 	{
-#define INST(mn, am, op) \
+#define INST(mn, am, op, len)						\
 		case op: \
 			execute(cpu, #mn, mn, fetch_addr(cpu, am, 0, &cpu->pc), am); \
 			break;
@@ -599,7 +596,7 @@ char *disas_step(cpu_t *cpu, uint16_t *pc)
 	uint8_t op = cpu->mem[(*pc)++];
 	switch (op)
 	{
-#define INST(mn, am, op) \
+#define INST(mn, am, op, len)						\
 		case op: \
 			end += dump_inst(cpu, end, #mn, \
 				fetch_addr(cpu, am, FETCH_NO_INDIRECTION, pc).ptr, am); \

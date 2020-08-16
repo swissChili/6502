@@ -1,3 +1,6 @@
 [submodule "nuklear"]
 	path = nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
+[submodule "as/libcollect"]
+	path = as/libcollect
+	url = https://github.com/swissChili/libcollect

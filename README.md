@@ -1,6 +1,6 @@
-# 6502 Toolchain
+# [6502 Toolchain](https://6502.swisschili.sh)
 
-[![Screenshot](screenshot.png)](colors.webm)
+[![Screenshot](screenshot.png)](https://6502.swisschili.sh)
 
 This project aims to create a portable toolchain for developing,
 testing and debugging programs for the 6502 processor. An assembler

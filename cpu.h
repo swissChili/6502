@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mnemonics.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <mqueue.h>
@@ -48,62 +50,9 @@ enum // Address Modes
 
 enum // Opcodes
 {
-	LDA,
-	LDX,
-	LDY,
-	STA,
-	STX,
-	STY,
-	ADC,
-	SBC,
-	INC,
-	INX,
-	INY,
-	DEC,
-	DEX,
-	DEY,
-	ASL,
-	LSR,
-	ROL,
-	ROR,
-	AND,
-	ORA,
-	EOR,
-	CMP,
-	CPX,
-	CPY,
-	BIT,
-	BCC,
-	BCS,
-	BNE,
-	BEQ,
-	BPL,
-	BMI,
-	BVC,
-	BVS,
-	TAX,
-	TXA,
-	TAY,
-	TYA,
-	TSX,
-	TXS,
-	PHA,
-	PLA,
-	PHP,
-	PLP,
-	JMP,
-	JSR,
-	RTS,
-	RTI,
-	CLC,
-	SEC,
-	CLD,
-	SED,
-	CLI,
-	SEI,
-	CLV,
-	BRK,
-	NOP,
+#define MN(name) name,
+	MNEMONICS
+#undef MN
 };
 
 enum // Fetch flags
