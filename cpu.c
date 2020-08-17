@@ -42,7 +42,7 @@ uint16_t le_to_native(uint8_t a, uint8_t b)
 #ifdef LITTLE_ENDIAN
 	return b << 8 | a;
 #else
-	return a << 8 | b;
+	return le16toh(a << 8 | b);
 #endif
 }
 

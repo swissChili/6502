@@ -70,7 +70,7 @@ void map_set(map_t *m, char *k, void *v)
 	{
 		map_node val =
 				{
-						malloc(strlen(k)),
+						malloc(strlen(k) + 1),
 						v,
 						1,
 						h,

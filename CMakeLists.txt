@@ -7,6 +7,15 @@ option(BUILD_ASSEMBLER ON)
 
 include_directories(nuklear)
 
+include(TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+
+if (${BIG_ENDIAN})
+	add_compile_definitions(BIG_ENDIAN)
+else()
+	add_compile_definitions(LITTLE_ENDIAN)
+endif()
+
 subdirs(as)
 
 if (${GEN_INSTRUCTIONS_HEADER})
