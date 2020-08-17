@@ -16,7 +16,7 @@ second_label:
 	bne start
 	jsr another_subroutine
 	tax
-	hlt
+	brk
 
 another_subroutine:
-	ret
+	rts

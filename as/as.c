@@ -18,10 +18,14 @@ enum
 	ARG_IMP,					/* Implied argument */
 };
 
+#define ERR "\033[31m"
+#define RESET "\033[0m"
+
 typedef struct
 {
 	uint8_t opcode;
 	uint8_t arg_type;
+	uint16_t line;
 	union
 	{
 		char label[32];
@@ -30,6 +34,36 @@ typedef struct
 		int8_t rel_arg;
 	};
 } inst_t;
+
+// Normal strtok() counts 2 seperators as one, ie asdf\n\njlk is 2 lines.
+// This functions counts that as 3 lines, and will return an empty line in between.
+char *strtok_fix(char *string, const char *token)
+{
+	static char *pos;
+	if (string)
+		pos = string;
+	else
+		string = pos;
+
+	if (*pos == 0)
+		return NULL;
+	
+	for (; *string; string++)
+	{
+		for (int i = 0; i < strlen(token); i++)
+		{
+			if (*string == token[i])
+			{
+				*string = 0;
+				char *old_pos = pos;
+				pos = string + 1;
+
+				return old_pos;
+			}
+		}
+	}
+	return pos;
+}
 
 void print_inst(inst_t *arg)
 {
@@ -385,20 +419,36 @@ uint32_t assemble(char *code, FILE *out)
 		pc = 0x600;
 	uint32_t line_no = 1;
 	map_t *labels = new_map();
-	char *line;
+	char *line,
+		*orig_line,
+		*line_start;
 
 	printf("Assembling File\n");
 	printf("%s\n", code);
 
-	line = strtok(code, "\r\n");
-	
-	while (line)
+	orig_line = strtok_fix(code, "\n");
+
+	while (orig_line)
 	{
+		line = strdup(orig_line);
+		line_start = line;
+		
+		if (*line == 0)
+			goto end_of_line;
+		printf("line %d: \033[36m%.12s\033[0m\n", line_no, line);
+		
 		skip_ws(&line);
 
-		printf("line: \033[36m%.12s\033[0m  ", line);
+		if (is_eol(*line))
+		{
+			printf("skip_ws() brought us to EOL\n");
+			goto end_of_line;
+		}
 		
 		char *label = parse_label(&line);
+		skip_ws(&code);
+		if (is_eol(*line))
+			goto end_of_line;
 		char *mn = parse_inst(&line);
 		printf(" skipping %d ", skip_ws(&line));
 		//printf("\033[33m%s\033[0m\n", line);
@@ -426,7 +476,11 @@ uint32_t assemble(char *code, FILE *out)
 			}						   \
 			else
 
-			MNEMONICS;
+			MNEMONICS
+			{
+				printf(ERR "Could not parse instruction on line %d\n%s\n" RESET, line_no, orig_line);
+				goto cleanup;
+			}
 #undef MN
 
 			printf("Got instruction %s %d\n", mn, mnemonic);
@@ -449,10 +503,14 @@ uint32_t assemble(char *code, FILE *out)
 			}
 #undef INST
 		}
-
-		line = strtok(NULL, "\r\n");
+	end_of_line:
+		line_no++;
+		printf("Line is %d\n", line_no);
+		orig_line = strtok_fix(NULL, "\n");
+		free(line_start);
 	}
 
+cleanup:
 	free_map(labels);
 
 	return num_insts;
