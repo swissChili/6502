@@ -19,3 +19,4 @@ tasks:
       ./6502 -h
 artifacts:
   - 6502/build/6502
+  - 6502/build/as/6502-as

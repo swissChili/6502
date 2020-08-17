@@ -5,6 +5,10 @@ BEGIN {
 	print "#define INSTRUCTIONS \\"
 }
 
-/0x.+/ {
+/0x/ {
 	print "	INST(" $2 ", AM_" $3 ", " $1", " $4 ") \\"
+}
+
+END {
+    print ""
 }

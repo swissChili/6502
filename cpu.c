@@ -1,8 +1,6 @@
 #include "cpu.h"
 #include "common.h"
 #include "instructions.h"
-#define SCREEN_ONLY_SDL
-#include "screen.h"
 
 #include "dbg.h"
 #include <errno.h>
@@ -14,9 +12,6 @@
 
 #define warn(m, ...) \
 	printf("\033[33m" m "\033[0m\n", ##__VA_ARGS__);
-
-
-sdl_screen_t *g_scr = NULL;
 
 
 void reset(cpu_t *cpu)

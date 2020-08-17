@@ -60,14 +60,16 @@ void print_inst(inst_t *arg)
 
 bool is_ident(char c)
 {
-	return c && (isalpha(c) || isdigit(c));
+	return c && (isalpha(c) || isdigit(c)
+				 || c == '_' || c == '-'
+				 || c == '$' || c == '.');
 }
 
 uint32_t skip_ws(char **code)
 {
 	uint32_t len = 0;
 
-	for (; isspace(**code); (*code)++, len++)
+	for (; **code == ' ' || **code == '\t'; (*code)++, len++)
 	{}
 
 	return len;
@@ -108,7 +110,7 @@ char *parse_label(char **code)
 
 	skip_ws(code);
 
-	if (**code == ':')
+	if (*code != start && **code == ':')
 	{
 		**code = 0;
 		(*code)++;
@@ -127,12 +129,19 @@ char *parse_inst(char **code)
 	for (; isalpha(**code); (*code)++)
 	{}
 
-	**code = 0;
-
 	if (start == *code)
 		return NULL;
 
-	(*code)++;
+	// If code is incremented when it points to \0, it will wrap to the next line
+	// returned by strtok(), which causes a bug where instructions followed immediately
+	// by a newline and no arguments causes the next instruction to parse the entire
+	// program as its argument (not good)
+	if (**code)
+	{
+		**code = 0;
+		(*code)++;
+	}
+
 	return start;
 }
 
@@ -140,7 +149,6 @@ bool is_eol(char c)
 {
 	return c == ';' ||
 		c == '\n' ||
-		c == '\r' ||
 		c == '\0';
 }
 
@@ -388,16 +396,26 @@ uint32_t assemble(char *code, FILE *out)
 	{
 		skip_ws(&line);
 
-		printf("\033[36m%.9s\033[0m\n", line);
+		printf("line: \033[36m%.12s\033[0m  ", line);
 		
-		char *label = parse_label(&line),
-			*mn = parse_inst(&line);
+		char *label = parse_label(&line);
+		char *mn = parse_inst(&line);
+		printf(" skipping %d ", skip_ws(&line));
+		//printf("\033[33m%s\033[0m\n", line);
+		
+		bool no_argument = false;
+		printf("eol is %c ($%x)\n", *line, *line);
+		if (is_eol(*line))
+		{
+			no_argument = true;
+			printf("... no argument\n");
+		}
 		int32_t mnemonic = -1;
 
 		if (label)
 		{
 			map_set(labels, label, (void *)pc);
-			printf("Set label %s at %lu\n", label, pc);
+			printf("Set label %s at $%lx\n", label, pc);
 		}
 
 		if (mn)
@@ -416,12 +434,13 @@ uint32_t assemble(char *code, FILE *out)
 			inst_t arg;
 			// printf("Parsing '%s'\n", line);
 #define INST(_mn, am, op, len) \
-			if (mnemonic == _mn && parse_arg(line, am, &arg)) \
-			{												  \
-				arg.opcode = op;							  \
-				pc += len;									  \
-				print_inst(&arg);							  \
-			}												  \
+			if ((no_argument && (_mn == AM_IMP || _mn == AM_ACC))		\
+				 || (mnemonic == _mn && parse_arg(line, am, &arg)))		\
+			{															\
+				arg.opcode = op;										\
+				pc += len;												\
+				print_inst(&arg);										\
+			}															\
 			else
 
 			INSTRUCTIONS

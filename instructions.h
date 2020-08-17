@@ -159,3 +159,4 @@
 	INST(STY, AM_ZP, 0x84, 2) \
 	INST(STY, AM_ZPX, 0x94, 2) \
 	INST(STY, AM_ABS, 0x8c, 3) \
+
