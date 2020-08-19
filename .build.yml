@@ -12,11 +12,16 @@ tasks:
       cd 6502
       mkdir build
       cd build
-      cmake ..
+      cmake .. -DCMAKE_BUILD_TYPE=Release
   - build: |
       cd 6502/build
       make -j
       ./6502 -h
+  - pack: |
+      cd 6502/build
+      cpack
+      dpkg -I 6502.deb
 artifacts:
   - 6502/build/6502
   - 6502/build/as/6502-as
+  - 6502/build/6502.deb

@@ -40,20 +40,22 @@ cpu_t new_cpu()
 uint16_t le_to_native(uint8_t a, uint8_t b)
 {
 #ifdef LITTLE_ENDIAN
+	//printf("Little Endian\n");
 	return b << 8 | a;
 #else
-	return le16toh(a << 8 | b);
+	//printf("Big Endian\n");
+	return a << 8 | b;
 #endif
 }
 
 void native_to_le(uint16_t n, uint8_t *a, uint8_t *b)
 {
 #ifdef LITTLE_ENDIAN
-	*a = n >> 8;
-	*b = n & 0xFF;
-#else
-	*a = n & 0xFF;
 	*b = n >> 8;
+	*a = n & 0xFF;
+#else
+	*b = n & 0xFF;
+	*a = n >> 8;
 #endif
 }
 
@@ -80,7 +82,7 @@ uint16_t stack_pople(cpu_t *cpu)
 {
 	uint8_t a = stack_pop(cpu);
 	uint8_t b = stack_pop(cpu);
-	return le_to_native(a, b);
+	return le_to_native(b, a);
 }
 
 void free_cpu(cpu_t *cpu)

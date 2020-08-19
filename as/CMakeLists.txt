@@ -14,3 +14,5 @@ endif()
 
 
 add_executable(6502-as main.c as.h as.c map.h map.c hash.c hash.c)
+
+install(TARGETS 6502-as)

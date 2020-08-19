@@ -21,6 +21,7 @@ enum
 };
 
 #define ERR "\033[31m"
+#define GREEN "\033[32m"
 #define RESET "\033[0m"
 #define MAX_LEN (0xFFFF - 0x600)
 #define MAX_INSTS (MAX_LEN / 2)
@@ -534,7 +535,8 @@ uint32_t assemble(char *code, FILE *out)
 			if ((no_argument && (_mn == AM_IMP || _mn == AM_ACC))		\
 				 || (mnemonic == _mn && parse_arg(line, am, arg)))		\
 			{															\
-				printf("AM_ succeeded: %s\n", #am);						\
+				printf(GREEN "AM_ succeeded: %s at pc=$%x\n" RESET,		\
+					   #am, pc);										\
 				arg->opcode = op;										\
 				pc += len;												\
 				print_inst(arg);										\
@@ -599,21 +601,21 @@ uint32_t assemble(char *code, FILE *out)
 			}
 			curr_pc += 2;
 			int16_t diff = lbl - curr_pc;
-			printf("ARG_REL, pc (after) == %x, diff = %d\n", curr_pc, diff);
+			printf("ARG_REL, pc (after) == %x, diff = %hx\n", curr_pc, (uint8_t) diff);
 			if ((diff < 0 ? -diff : diff) > 0xFF)
 			{
 				printf(ERR "Error on line %d: label '%s' is too far away for a relative jump" RESET "\n", insts[i]->line, insts[i]->label);
 				printf("pc == %hx, label is at %hx\n", curr_pc, lbl);
 				goto cleanup;
 			}
-			putshort((uint8_t) diff, out);
+			putc((uint8_t) diff, out);
 			break;
 		}
 		default:
 			curr_pc++;
 		}
 	}
-	
+
 cleanup:
 	printf("-----\n");
 	printf("At end, there are %d instructions\n", num_insts);
