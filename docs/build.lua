@@ -4,7 +4,7 @@ site = Site
 
 -- site.processors.md = markdownProcessor
 site.processors.scss = {
-	process = cmdProcessor("sass -"),
+	process = cmdProcessor("sass"),
 	extension = "css"
 }
 site.processors.webm = {

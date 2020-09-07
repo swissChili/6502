@@ -20,9 +20,6 @@ enum
 	ARG_IMP,					/* Implied argument */
 };
 
-#define ERR "\033[31m"
-#define GREEN "\033[32m"
-#define RESET "\033[0m"
 #define MAX_LEN (0xFFFF - 0x600)
 #define MAX_INSTS (MAX_LEN / 2)
 
@@ -583,7 +580,8 @@ uint32_t assemble(char *code, FILE *out)
 			uint16_t lbl;
 			if (!(lbl = ll_find(last_node, insts[i]->label)))
 			{
-				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n", insts[i]->line, insts[i]->label);
+				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
+					   insts[i]->line, insts[i]->label);
 				goto cleanup;
 			}
 			curr_pc += 3;
@@ -596,7 +594,8 @@ uint32_t assemble(char *code, FILE *out)
 			uint16_t lbl;
 			if (!(lbl = ll_find(last_node, insts[i]->label)))
 			{
-				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n", insts[i]->line, insts[i]->label);
+				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
+					   insts[i]->line, insts[i]->label);
 				goto cleanup;
 			}
 			curr_pc += 2;
@@ -604,7 +603,8 @@ uint32_t assemble(char *code, FILE *out)
 			printf("ARG_REL, pc (after) == %x, diff = %hx\n", curr_pc, (uint8_t) diff);
 			if ((diff < 0 ? -diff : diff) > 0xFF)
 			{
-				printf(ERR "Error on line %d: label '%s' is too far away for a relative jump" RESET "\n", insts[i]->line, insts[i]->label);
+				printf(ERR "Error on line %d: label '%s' is too far away for a relative jump" RESET "\n",
+					   insts[i]->line, insts[i]->label);
 				printf("pc == %hx, label is at %hx\n", curr_pc, lbl);
 				goto cleanup;
 			}

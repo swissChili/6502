@@ -1,10 +1,12 @@
 #include "as.h"
+#include "map.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <bits/getopt_core.h>
 #include <unistd.h>
 
+// TODO: handle all the possible IO errors
 int main(int argc, char **argv)
 {
 	char c;
@@ -38,7 +40,22 @@ int main(int argc, char **argv)
 	fread(text, len, 1, in);
 	text[len] = 0;
 
-	uint32_t built = assemble(text, out);
+	FILE *temp = tmpfile();
+
+	map_t *macros = new_map();
+	uint32_t processed = preproc(text, temp, macros, 0);
+	free_map_items(macros);
+
+	fseek(temp, 0, SEEK_END);
+	ssize_t temp_len = ftell(in);
+	fseek(temp, 0, SEEK_SET);
+
+	char *processed_text = malloc(len + 1);
+	fread(processed_text, len, 1, in);
+	text[temp_len] = 0;
+	
+	uint32_t built = assemble(processed_text, out);
 
 	free(text);
+	free(processed_text);
 }
