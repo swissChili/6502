@@ -18,25 +18,19 @@
 					<li><a href="https://builds.sr.ht/~swisschili/6502">
 						<img src="https://builds.sr.ht/~swisschili/6502.svg"></a>
 					</li>
-					<li><a href="/usage.html">Basic usage</a></li>
-					<li><a href="/examples.html">Example programs</a></li>
-					<li><a href="/building.html">Building from source</a></li>
-					<li><a href="/debugger.html">Debugger commands</a></li>
+                    <li><a href="https://wiki.swisschili.sh/6502">Docs</a>
+                        <ul>
+					        <li><a href="https://wiki.swisschili.sh/6502/Basic%20Usage">Basic usage</a></li>
+					        <li><a href="https://wiki.swisschili.sh/6502/Example%20Programs">Example programs</a></li>
+					        <li><a href="https://wiki.swisschili.sh/6502/Building%20from%20Source">Building from source</a></li>
+					        <li><a href="https://wiki.swisschili.sh/6502/Debugger">Debugger commands</a></li>
+                        </ul>
+                    </li>
 				</ul>
 			</div>
 			<div class="body">
 				${body}
 			</div>
 		</main>
-
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
-		<script>
-			hljs.initHighlightingOnLoad();
-			document.addEventListener('DOMContentLoaded', (event) => {
-				document.querySelectorAll('pre code').forEach((block) => {
-					hljs.highlightBlock(block);
-				});
-			});
-		</script>
 	</body>
 </html>

@@ -10,6 +10,12 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+#ifdef VERBOSE_ASSEMBLER
+#define dbgf(fmt, ...) fprintf(fmt, __VA_ARGS__)
+#else
+#define dbgf(fmt, ...)
+#endif
+
 enum
 {
 	ARG_16,						/* Absolute 16 bit argument */
@@ -85,26 +91,26 @@ void print_inst(inst_t *arg)
 	char *arg_types =
 		"16  8   8RELREL ABS IMP ";
 	
-	printf("\033[33mInst: %.4s $%x ", arg_types + arg->arg_type * 4, arg->opcode);
+	dbgf("\033[33mInst: %.4s $%x ", arg_types + arg->arg_type * 4, arg->opcode);
 
 	switch (arg->arg_type)
 	{
 	case ARG_16:
-		printf("%x", arg->long_arg);
+		dbgf("%x", arg->long_arg);
 		break;
 	case ARG_8:
-		printf("%x", arg->byte_arg);
+		dbgf("%x", arg->byte_arg);
 		break;
 	case ARG_8REL:
-		printf("%d", arg->rel_arg);
+		dbgf("%d", arg->rel_arg);
 		break;
 	case ARG_REL:
 	case ARG_ABS:
-		printf("%s", arg->label);
+		dbgf("%s", arg->label);
 		break;
 	}
 
-	printf("\033[0m\n");
+	dbgf("\033[0m\n");
 }
 
 bool is_ident(char c)
@@ -165,7 +171,7 @@ char *parse_label(char **code)
 		(*code)++;
 		return start;
 	}
-	printf(">> lkl: **code == %c %x\n", **code, **code);
+	dbgf(">> lkl: **code == %c %x\n", **code, **code);
 
 	*code = start;
 
@@ -289,7 +295,7 @@ bool parse_arg(char *code, int am, inst_t *inst)
 	{
 	case AM_ACC:
 	case AM_IMP:
-		printf("Trying AM_IMP on '%.8s'\n", code);
+		dbgf("Trying AM_IMP on '%.8s'\n", code);
 		skip_ws(&code);
 		if (is_eol(*code))
 		{
@@ -299,7 +305,7 @@ bool parse_arg(char *code, int am, inst_t *inst)
 		break;
 
 	case AM_IMM:
-		printf("Trying AM_IMM on '%.8s'\n", code);
+		dbgf("Trying AM_IMM on '%.8s'\n", code);
 		if (!skip(&code, "#"))
 			return false;
 		skip_ws(&code);
@@ -375,14 +381,14 @@ bool parse_arg(char *code, int am, inst_t *inst)
 			inst->arg_type = ARG_8;
 			inst->byte_arg = num8;
 		}
-		printf("Parsing AM_* worked, now parsing ,\n");
+		dbgf("Parsing AM_* worked, now parsing ,\n");
 		if (!skip(&code, ","))
 			return false;
 
 		skip_ws(&code);
-		printf(", worked yup\n");
+		dbgf(", worked yup\n");
 		char reg = (am == AM_AY || am == AM_ZPY ? 'y' : 'x');
-		printf("reg is %c, *code is %c %x\n", reg, tolower(*code), tolower(*code));
+		dbgf("reg is %c, *code is %c %x\n", reg, tolower(*code), tolower(*code));
 		if (tolower(*code) != reg)
 			return false;
 		(code)++;
@@ -457,8 +463,8 @@ uint32_t assemble(char *code, FILE *out)
 		*line_start;
 	inst_t **insts = calloc(sizeof(inst_t), MAX_INSTS);
 
-	printf("Assembling File\n");
-	printf("%s\n", code);
+	dbgf("Assembling File\n");
+	dbgf("%s\n", code);
 
 	orig_line = strtok_fix(code, "\n");
 
@@ -472,16 +478,16 @@ uint32_t assemble(char *code, FILE *out)
 		
 		skip_ws(&line);
 		
-		printf("line %d: \033[36m%.12s\033[0m\n", line_no, line);
+		dbgf("line %d: \033[36m%.12s\033[0m\n", line_no, line);
 		
 		if (is_eol(*line))
 		{
-			printf("skip_ws() brought us to EOL\n");
+			dbgf("skip_ws() brought us to EOL\n");
 			goto end_of_line;
 		}
 		
 		char *label = parse_label(&line);
-		printf(">> label == %.5s %p\n", label, label);
+		dbgf(">> label == %.5s %p\n", label, label);
 		skip_ws(&code);
 		//if (is_eol(*line))
 		//	goto end_of_line;
@@ -496,7 +502,7 @@ uint32_t assemble(char *code, FILE *out)
 
 		if (label)
 		{
-			printf("Storing label %s\n", label);
+			dbgf("Storing label %s\n", label);
 			ll_node_t *head = malloc(sizeof(ll_node_t));
 			head->last = last_node;
 			strncpy(head->name, label, 32);
@@ -504,7 +510,7 @@ uint32_t assemble(char *code, FILE *out)
 			head->name[31] = 0;
 			head->addr = pc;
 			last_node = head;
-			printf("Set label %s at $%x\n", label, pc);
+			dbgf("Set label %s at $%x\n", label, pc);
 		}
 
 		if (mn)
@@ -517,22 +523,22 @@ uint32_t assemble(char *code, FILE *out)
 
 			MNEMONICS
 			{
-				printf(ERR "Could not parse instruction on line %d\n%s\n" RESET, line_no, orig_line);
+				dbgf(ERR "Could not parse instruction on line %d\n%s\n" RESET, line_no, orig_line);
 				free(line_start);
 				goto cleanup;
 			}
 #undef MN
 
-			printf("Got instruction %s %d\n", mn, mnemonic);
+			dbgf("Got instruction %s %d\n", mn, mnemonic);
 
 			inst_t *arg = malloc(sizeof(inst_t));
 			arg->line = line_no;
-			// printf("Parsing '%s'\n", line);
+			// dbgf("Parsing '%s'\n", line);
 #define INST(_mn, am, op, len) \
 			if ((no_argument && (_mn == AM_IMP || _mn == AM_ACC))		\
 				 || (mnemonic == _mn && parse_arg(line, am, arg)))		\
 			{															\
-				printf(GREEN "AM_ succeeded: %s at pc=$%x\n" RESET,		\
+				dbgf(GREEN "AM_ succeeded: %s at pc=$%x\n" RESET,		\
 					   #am, pc);										\
 				arg->opcode = op;										\
 				pc += len;												\
@@ -542,7 +548,7 @@ uint32_t assemble(char *code, FILE *out)
 
 			INSTRUCTIONS
 			{
-				printf("\033[31mCould not be parsed: %s '%s'\033[0m\n", mn, line);
+				dbgf("\033[31mCould not be parsed: %s '%s'\033[0m\n", mn, line);
 				free(line_start);
 				goto cleanup;
 			}
@@ -580,7 +586,7 @@ uint32_t assemble(char *code, FILE *out)
 			uint16_t lbl;
 			if (!(lbl = ll_find(last_node, insts[i]->label)))
 			{
-				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
+				dbgf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
 					   insts[i]->line, insts[i]->label);
 				goto cleanup;
 			}
@@ -594,18 +600,18 @@ uint32_t assemble(char *code, FILE *out)
 			uint16_t lbl;
 			if (!(lbl = ll_find(last_node, insts[i]->label)))
 			{
-				printf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
+				dbgf(ERR "Error on line %d: label '%s' is not defined" RESET "\n",
 					   insts[i]->line, insts[i]->label);
 				goto cleanup;
 			}
 			curr_pc += 2;
 			int16_t diff = lbl - curr_pc;
-			printf("ARG_REL, pc (after) == %x, diff = %hx\n", curr_pc, (uint8_t) diff);
+			dbgf("ARG_REL, pc (after) == %x, diff = %hx\n", curr_pc, (uint8_t) diff);
 			if ((diff < 0 ? -diff : diff) > 0xFF)
 			{
-				printf(ERR "Error on line %d: label '%s' is too far away for a relative jump" RESET "\n",
+				dbgf(ERR "Error on line %d: label '%s' is too far away for a relative jump" RESET "\n",
 					   insts[i]->line, insts[i]->label);
-				printf("pc == %hx, label is at %hx\n", curr_pc, lbl);
+				dbgf("pc == %hx, label is at %hx\n", curr_pc, lbl);
 				goto cleanup;
 			}
 			putc((uint8_t) diff, out);
@@ -617,8 +623,8 @@ uint32_t assemble(char *code, FILE *out)
 	}
 
 cleanup:
-	printf("-----\n");
-	printf("At end, there are %d instructions\n", num_insts);
+	dbgf("-----\n");
+	dbgf("At end, there are %d instructions\n", num_insts);
 	while (last_node)
 	{
 		ll_node_t *curr_node = last_node;

@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 {
 	char c;
 	FILE *in = stdin,
-		*out = stdout;
+		*out = NULL;
 
 	while ((c = getopt(argc, argv, "i:o:")) != -1)
 	{
@@ -32,6 +32,12 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (!out)
+	{
+		fprintf(stderr, "-o flag is now mandatory\n");
+		return 1;
+	}
+
 	fseek(in, 0, SEEK_END);
 	ssize_t len = ftell(in);
 	fseek(in, 0, SEEK_SET);
@@ -40,22 +46,7 @@ int main(int argc, char **argv)
 	fread(text, len, 1, in);
 	text[len] = 0;
 
-	FILE *temp = tmpfile();
-
-	map_t *macros = new_map();
-	uint32_t processed = preproc(text, temp, macros, 0);
-	free_map_items(macros);
-
-	fseek(temp, 0, SEEK_END);
-	ssize_t temp_len = ftell(in);
-	fseek(temp, 0, SEEK_SET);
-
-	char *processed_text = malloc(len + 1);
-	fread(processed_text, len, 1, in);
-	text[temp_len] = 0;
-	
-	uint32_t built = assemble(processed_text, out);
+	uint32_t built = assemble(text, out);
 
 	free(text);
-	free(processed_text);
 }

@@ -32,7 +32,7 @@ add_executable(6502 main.c cpu.c cpu.h dbg.c dbg.h
 	instructions.h gui.h gui.c screen.h screen.c common.h common.c)
 target_link_libraries(6502 readline SDL2 GL GLU GLEW m rt pthread)
 
-install(TARGETS 6502)
+install(TARGETS 6502 RUNTIME DESTINATION bin)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "swissChili")
